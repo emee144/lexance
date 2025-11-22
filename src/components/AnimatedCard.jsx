@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function AnimatedCard() {
   return (
-    <div className="w-full overflow-hidden bg-gray-500/50 py-8">
+    <div className="w-full overflow-hidden bg-gray-500/10 py-8">
       <div className="flex animate-marquee">
         
         <div className="flex shrink-0 items-center gap-x-8">

@@ -7,7 +7,7 @@ if (!MONGODB_URI) {
   throw new Error("Please define MONGODB_URI in your .env.local file");
 }
 
-// This is a global cached connection to avoid creating multiple connections in Next.js
+// Global cached connection to avoid creating multiple connections in Next.js
 let cached = global.mongoose;
 
 if (!cached) {
@@ -22,10 +22,7 @@ export async function connectDB() {
 
   if (!cached.promise) {
     cached.promise = mongoose
-      .connect(MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      })
+      .connect(MONGODB_URI) // ✅ Removed deprecated options
       .then((mongoose) => mongoose);
   }
 
