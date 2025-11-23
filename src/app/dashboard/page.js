@@ -1,16 +1,21 @@
 "use client";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
+
 import AnimatedCard from "@/components/AnimatedCard";
-import DashboardNavbar from "@/components/DashboardNavbar"; 
-import CryptoSavingsCarousel from '@/components/CryptoSavingsCarousel';
+import DashboardNavbar from "@/components/DashboardNavbar";
+import CryptoSavingsCarousel from "@/components/CryptoSavingsCarousel";
+import DepositDrawerContent from "@/components/DepositDrawerContent";
+import DepositCryptoPage from "@/app/deposit/crypto/page";
 
 export default function Dashboard() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [coins, setCoins] = useState([]);
-  const [totalBalance, setTotalBalance] = useState(0);
-  const [totalPnl, setTotalPnl] = useState(0);
+  const [totalBalance] = useState(0);
+  const [totalPnl] = useState(0);
+  const [selectedDepositCoin, setSelectedDepositCoin] = useState("USDT");
   const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const [depositView, setDepositView] = useState("main"); // "main" or "crypto"
 
   const fetchSpotData = async () => {
     try {
@@ -19,31 +24,26 @@ export default function Dashboard() {
         { cache: "no-store" }
       );
       const data = await res.json();
-      // Optional: map to only the fields you want
       const formatted = data.map((coin) => ({
         id: coin.id,
         pair: `${coin.symbol.toUpperCase()}/USDT`,
         name: coin.name,
         price: coin.current_price,
         change: coin.price_change_percentage_24h,
-        marketCap: coin.market_cap,
-        volume: coin.total_volume,
         image: coin.image,
-        sparkline: coin.sparkline_in_7d.price,
       }));
       setCoins(formatted);
     } catch (error) {
-      console.log("Failed to fetch:", error);
+      console.error("Failed to fetch coins:", error);
     }
   };
 
   useEffect(() => {
     fetchSpotData();
-    const interval = setInterval(fetchSpotData, 5000); // optional: refresh every 5 seconds
+    const interval = setInterval(fetchSpotData, 8000);
     return () => clearInterval(interval);
   }, []);
 
-  // Mock data for assets and orders (replace with real API calls)
   const assets = [
     { name: "BTC", balance: 0.5, value: 30000, change: 2.5 },
     { name: "ETH", balance: 10, value: 2500, change: -1.2 },
@@ -55,14 +55,18 @@ export default function Dashboard() {
     { pair: "ETH/USDT", type: "Sell", amount: 5, price: 2500, status: "Pending" },
   ];
 
+  const openDeposit = (view = "main") => {
+    setDepositView(view);
+    setIsDepositOpen(true);
+  };
+
   return (
-    <div className="font-sans bg-gray-50 dark:bg-black min-h-screen">
+    <div className="font-sans bg-gray-50 dark:bg-black min-h-screen flex flex-col">
       <DashboardNavbar />
-      
-      {/* Hero Section - Imitating Bybit: Clean banner with balance overview, tagline, and Deposit CTA */}
+
+      {/* Hero Section */}
       <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-8 py-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
-          {/* Left: Welcome Tagline */}
           <div className="text-center md:text-left mb-4 md:mb-0">
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
               Your Lexance crypto journey, simplified.
@@ -71,46 +75,46 @@ export default function Dashboard() {
               Manage your portfolio with ease. Trade, earn, and grow your assets securely.
             </p>
           </div>
-          
-          {/* Right: Total Balance Card - Bybit-style compact overview */}
+
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 md:p-6 text-center">
-            <div className="text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Total Balance</div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">${totalBalance.toLocaleString()}</div>
-            <div className={`text-sm font-medium mt-1 ${totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}% Today
+            <div className="text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
+              Total Balance
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              ${totalBalance.toLocaleString()}
+            </div>
+            <div className={`text-sm font-medium mt-1 ${totalPnl >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {totalPnl >= 0 ? "+" : ""}{totalPnl.toFixed(2)}% Today
             </div>
           </div>
         </div>
-        
-        {/* Deposit CTA - Prominent button like Bybit */}
+
         <div className="max-w-7xl mx-auto text-center mt-6">
           <button
-  onClick={() => setIsDepositOpen(true)}
-  className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 cursor-pointer"
->
-  Deposit Now
-</button>
+            onClick={() => openDeposit("main")}
+            className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+          >
+            Deposit Now
+          </button>
         </div>
       </section>
 
-      <div className="flex flex-col lg:flex-row max-w-7xl mx-auto p-8 gap-8">
-        {/* Sidebar: Quick Actions & Assets Overview */}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto p-8 gap-8">
+        {/* Sidebar */}
         <div className="w-full lg:w-1/3 space-y-6">
-          
-          {/* Assets Section */}
+          {/* Assets */}
           <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-              Assets
-            </h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Assets</h2>
             <div className="space-y-3">
-              {assets.map((asset, index) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+              {assets.map((asset, i) => (
+                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
                   <div className="flex items-center gap-3">
-                    <Image 
-                      src={`/${asset.name.toLowerCase()}.png`} 
-                      alt={asset.name} 
-                      width={24} 
-                      height={24} 
+                    <Image
+                      src={`/${asset.name.toLowerCase()}.png`}
+                      alt={asset.name}
+                      width={24}
+                      height={24}
                       className="rounded-full"
                     />
                     <div>
@@ -120,14 +124,14 @@ export default function Dashboard() {
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-gray-900 dark:text-white">${asset.value.toLocaleString()}</div>
-                    <div className={`text-sm ${asset.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {asset.change >= 0 ? '+' : ''}{asset.change}%
+                    <div className={`text-sm ${asset.change >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {asset.change >= 0 ? "+" : ""}{asset.change}%
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="w-full mt-4 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+            <button className="w-full mt-4 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
               View All Assets
             </button>
           </section>
@@ -136,15 +140,16 @@ export default function Dashboard() {
           <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">
-              <button
-  onClick={() => setIsDepositOpen(true)}
-  className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
->
-  Deposit
-</button>
-              <button className="px-4 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950 cursor-pointer">Withdraw</button>
-              <button className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer">Buy Crypto</button>
-              <button className="px-4 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950 cursor-pointer">Earn</button>
+              <button onClick={() => openDeposit("main")} className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Deposit
+              </button>
+              <button className="px-4 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950">
+                Withdraw
+              </button>
+              <button className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">Buy Crypto</button>
+              <button className="px-4 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950">
+                Earn
+              </button>
             </div>
           </section>
 
@@ -152,20 +157,20 @@ export default function Dashboard() {
           <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center justify-between">
               Recent Orders
-              <button className="text-sm text-blue-600 hover:underline cursor-pointer">View All</button>
+              <button className="text-sm text-blue-600 hover:underline">View All</button>
             </h2>
             <div className="space-y-3">
-              {orders.map((order, index) => (
-                <div key={index} className="flex justify-between items-center py-2 text-sm">
+              {orders.map((order, i) => (
+                <div key={i} className="flex justify-between items-center py-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs ${order.type === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs ${order.type === "Buy" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                       {order.type}
                     </span>
                     <span>{order.pair}</span>
                   </div>
                   <div className="text-right">
                     <div>${order.price.toLocaleString()}</div>
-                    <div className={`font-medium ${order.status === 'Filled' ? 'text-green-600' : 'text-yellow-600'}`}>
+                    <div className={`font-medium ${order.status === "Filled" ? "text-green-600" : "text-yellow-600"}`}>
                       {order.status}
                     </div>
                   </div>
@@ -175,13 +180,11 @@ export default function Dashboard() {
           </section>
         </div>
 
-        {/* Main Content: Trading Panel & Charts */}
+        {/* Main Panel */}
         <div className="w-full lg:w-2/3 space-y-6">
-          
-          {/* Animated Card - Reuse from home, perhaps for market overview */}
           <AnimatedCard />
 
-          
+          {/* Spot Table */}
           <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden">
             <h2 className="text-xl font-bold p-6 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-800">
               Spot X
@@ -198,23 +201,17 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {coins.map((coin) => (
-                    <tr key={coin.id} className="border-b border-gray-200 dark:border-gray-700">
+                    <tr key={coin.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-6 py-4 flex items-center gap-3 text-gray-900 dark:text-white font-medium">
-                        <Image src={coin.image} alt={coin.name} width={24} height={24} />
+                        <Image src={coin.image} alt={coin.name} width={24} height={24} className="rounded-full" />
                         {coin.pair}
                       </td>
-                      <td className="px-6 py-4 text-gray-900 dark:text-white">
-                        ${coin.price.toLocaleString()}
-                      </td>
-                      <td
-                        className={`px-6 py-4 font-semibold ${
-                          coin.change >= 0 ? "text-green-500" : "text-red-500"
-                        }`}
-                      >
-                        {coin.change.toFixed(2)}%
+                      <td className="px-6 py-4 text-gray-900 dark:text-white">${coin.price?.toLocaleString() ?? "-"}</td>
+                      <td className={`px-6 py-4 font-semibold ${coin.change >= 0 ? "text-green-500" : "text-red-500"}`}>
+                        {coin.change?.toFixed(2) ?? "0.00"}%
                       </td>
                       <td className="px-6 py-4">
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                           Trade
                         </button>
                       </td>
@@ -224,22 +221,22 @@ export default function Dashboard() {
               </table>
             </div>
           </section>
-
-         </div> 
-      </div>
-
-      <div className="w-full mt-12 px-4 md:px-8 lg:px-0">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-            Top Savings & Staking
-          </h2>
-          <CryptoSavingsCarousel />
         </div>
       </div>
 
+     {/* Top Savings & Staking - Fixed */}
+<div className="w-full px-4 md:px-8 lg:px-0 mt-12">
+  <div className="max-w-7xl mx-auto">
+    <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
+      Top Savings & Staking
+    </h2>
+    <CryptoSavingsCarousel />
+  </div>
+</div>
+
+      {/* ========== YOUR ORIGINAL LEXANCE FOOTER ========== */}
       <footer className="bg-[#0f0f12] text-gray-300 py-16 mt-20">
         <div className="max-w-7xl mx-auto px-6">
-          {/* Top Highlights */}
           <div className="grid md:grid-cols-3 gap-10 border-b border-gray-700 pb-10">
             <div>
               <h3 className="text-white font-semibold text-lg">Globally regulated</h3>
@@ -260,13 +257,11 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-          {/* Brand Name */}
+
           <div className="mt-10 mb-6">
-            <h1 className="text-3xl font-bold text-white tracking-wide">
-              LEXANCE
-            </h1>
+            <h1 className="text-3xl font-bold text-white tracking-wide">LEXANCE</h1>
           </div>
-          {/* Link Sections */}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10 text-sm">
             <div>
               <h4 className="text-orange-500 font-semibold mb-3">About</h4>
@@ -316,84 +311,58 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {isDepositOpen && (
-        <>
-          {/* Dark Backdrop (click to close) */}
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
-            onClick={() => setIsDepositOpen(false)}
-          />
+      {/* ==================== DEPOSIT DRAWER ==================== */}
+{isDepositOpen && (
+  <>
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 z-40"
+      onClick={() => setIsDepositOpen(false)}
+    />
 
-          {/* Sliding Panel from Right */}
-          <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 overflow-y-auto transform transition-transform duration-300 ease-out">
-            {/* Header */}
-            <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Select Payment Method
-              </h2>
-              <button
-                onClick={() => setIsDepositOpen(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition cursor-pointer"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+    {/* Drawer */}
+    <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col">
+      {/* Header */}
+      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-6 flex items-center justify-between">
+        {depositView === "crypto" ? (
+          <button
+            onClick={() => setDepositView("main")}
+            className="text-blue-600 font-bold flex items-center gap-2 hover:underline"
+          >
+            Back
+          </button>
+        ) : (
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Deposit</h2>
+        )}
+        <button
+          onClick={() => setIsDepositOpen(false)}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-8">
-              {/* Already have crypto → Deposit Crypto */}
-              <div
-                onClick={() => alert("Redirecting to Crypto Deposit...")}
-                className="bg-linear-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-2xl p-8 cursor-pointer hover:shadow-xl transition-all border border-blue-200 dark:border-blue-800"
-              >
-                <h3 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-3">
-                  Deposit Crypto
-                </h3>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Already have crypto? Deposit directly
-                </p>
-              </div>
-
-              {/* Don't have crypto */}
-              <div>
-                <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">
-                  Don't have crypto?
-                </h3>
-
-                {/* P2P Buy with NGN */}
-                <div className="bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-2xl p-6 mb-6 cursor-pointer hover:shadow-lg transition">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="text-4xl font-bold text-orange-600 dark:text-orange-400">NGN</div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        P2P Trading <span className="text-green-600 font-medium">Recently</span>
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium text-green-600">More Choices, Better Prices</p>
-                  </div>
-                  <button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-semibold transition cursor-pointer">
-                    Buy with NGN
-                  </button>
-                </div>
-
-                {/* Card Payment */}
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-500 transition">
-                  <div className="flex justify-center gap-6 mb-6">
-                    <Image src="/visa.png" alt="Visa" width={60} height={40} />
-                    <Image src="/mastercard.png" alt="Mastercard" width={60} height={40} />
-                    <Image src="/americanexpress.png" alt="American Express" width={60} height={60} />
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    Visa, Mastercard and American Express are supported
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Content — THIS IS THE ONLY PART THAT CHANGED */}
+      <div className="flex-1 overflow-y-auto">
+  {depositView === "main" ? (
+    <DepositDrawerContent
+      onSelectCrypto={(coin) => {
+        setSelectedDepositCoin(coin);   // ← use React state (best way)
+        setDepositView("crypto");
+      }}
+    />
+  ) : (
+    <DepositCryptoPage
+      selectedCoin={selectedDepositCoin}   // ← pass the coin here
+      onBack={() => setDepositView("main")}
+    />
+  )}
+</div>
+    </div>
+  </>
+)}
     </div>
   );
 }

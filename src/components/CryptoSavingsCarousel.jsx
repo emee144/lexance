@@ -1,87 +1,95 @@
 // components/CryptoSavingsCarousel.jsx
-import Image from 'next/image';
-import Link from 'next/link';
+"use client";
 
-const savings = [
-  { symbol: 'USDT', rate: 'Up to 555.00%', label: 'APR', badge: 'New', gradient: 'from-yellow-400 to-orange-500' },
-  { symbol: 'BTC', rate: '2.30%', label: 'Savings APR', gradient: 'from-orange-400 to-red-500' },
-  { symbol: 'ETH', rate: '0.80%', label: 'Savings APR', gradient: 'from-purple-400 to-pink-500' },
-  { symbol: 'BNB', rate: '3.50%', label: 'Savings APR', gradient: 'from-yellow-500 to-green-500' },
-  { symbol: 'SOL', rate: '8.20%', label: 'Staking APR', badge: 'Hot', gradient: 'from-pink-500 to-purple-600' },
-  { symbol: 'ADA', rate: '4.10%', label: 'Staking APR', gradient: 'from-blue-400 to-cyan-500' },
-  { symbol: 'XRP', rate: '5.80%', label: 'Savings APR', gradient: 'from-indigo-400 to-purple-600' },
-  { symbol: 'DOGE', rate: '12.50%', label: 'Staking APR', badge: 'Hot', gradient: 'from-amber-400 to-red-600' },
+import Image from "next/image";
+
+const products = [
+  { coin: "USDT", apr: "555.00", label: "New", hot: false },
+  { coin: "BTC", apr: "2.30", label: null, hot: false },
+  { coin: "ETH", apr: "0.80", label: null, hot: false },
+  { coin: "BNB", apr: "3.50", label: null, hot: false },
+  { coin: "SOL", apr: "8.20", label: "Hot", hot: true },
+  { coin: "ADA", apr: "4.10", label: null, hot: false },
+  { coin: "XRP", apr: "5.80", label: null, hot: false },
+  { coin: "DOGE", apr: "12.50", label: "Hot", hot: true },
+  { coin: "TRX", apr: "6.80", label: "New", hot: false },
+  { coin: "LINK", apr: "4.20", label: null, hot: false },
 ];
-
-// Duplicate the array to create infinite loop
-const loopSavings = [...savings, ...savings];
 
 export default function CryptoSavingsCarousel() {
   return (
-    <div className="relative w-full overflow-hidden py-8">
-      <div className="animate-scroll flex gap-6">
-        {loopSavings.map((item, index) => (
-          <Link
-            href={`/savings/${item.symbol.toLowerCase()}`}
-            key={index}
-            className="block shrink-0"
-          >
-            <div
-              className={`
-                relative overflow-hidden rounded-2xl shadow-2xl p-8
-                w-80 min-w-80 h-56
-                bg-linear-to-br ${item.gradient}
-                transition-all duration-300
-              `}
-            >
-              {/* Badge */}
-              {item.badge && (
-                <div className={`absolute top-4 right-4 px-4 py-1.5 text-xs font-bold text-white rounded-full ${
-                  item.badge === 'New' ? 'bg-yellow-500' : 'bg-red-500'
-                }`}>
-                  {item.badge}
-                </div>
-              )}
-
-              {/* Icon */}
-              <div className="flex justify-center mb-5">
-                <Image
-                  src={`/${item.symbol.toLowerCase()}.png`}
-                  alt={item.symbol}
-                  width={60}
-                  height={60}
-                />
-              </div>
-
-              {/* Text */}
-              <div className="text-center text-white">
-                <div className="uppercase text-sm font-semibold opacity-90">
-                  {item.symbol}
-                </div>
-                <div className="text-4xl font-bold mt-3">
-                  {item.rate}
-                </div>
-                <div className="text-sm font-medium opacity-90 mt-1">
-                  {item.label}
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
+    <div className="overflow-hidden">
+      <div className="inline-flex animate-marquee">
+        {/* First set */}
+        <div className="flex gap-6">
+          {products.map((item, i) => (
+            <Card key={`a-${i}`} item={item} />
+          ))}
+        </div>
+        {/* Duplicate set — this is what makes it seamless */}
+        <div className="flex gap-6">
+          {products.map((item, i) => (
+            <Card key={`b-${i}`} item={item} />
+          ))}
+        </div>
       </div>
 
-      {/* Animation */}
+      {/* Critical CSS Fix: Right to Left + Infinite */}
       <style jsx>{`
-        .animate-scroll {
-          width: max-content;
-          animation: scroll 40s linear infinite;
+        @keyframes marquee {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
         }
 
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+        .animate-marquee {
+          animation: marquee 35s linear infinite;
+        }
+
+        .animate-marquee:hover {
+          animation-play-state: paused;
         }
       `}</style>
+    </div>
+  );
+}
+
+function Card({ item }) {
+  return (
+    <div className="w-72 shrink-0 bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all border border-gray-200 dark:border-gray-800">
+      {item.label && (
+        <span
+          className={`inline-block px-2 py-1 mb-3 text-xs font-bold rounded-full ${
+            item.label === "New" ? "bg-orange-500 text-white" : "bg-red-500 text-white"
+          }`}
+        >
+          {item.label}
+        </span>
+      )}
+
+      <div className="mb-4 flex items-center gap-3">
+        <Image
+          src={`/${item.coin.toLowerCase()}.png`}
+          alt={item.coin}
+          width={40}
+          height={40}
+          className="rounded-full"
+        />
+        <div className="text-lg font-bold text-gray-900 dark:text-white">
+          {item.coin}
+        </div>
+      </div>
+
+      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+        {item.apr}%
+      </div>
+
+      <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        {item.hot ? "Staking APR" : "Savings APR"}
+      </div>
     </div>
   );
 }

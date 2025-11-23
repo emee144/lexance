@@ -4,10 +4,11 @@ import mongoose from "mongoose";
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error("Please define MONGODB_URI in your .env.local file");
+  throw new Error(
+    "Please define MONGODB_URI in your .env.local file.\n" +
+      "Example: mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/your-db-name?retryWrites=true&w=majority"
+  );
 }
-
-// Global cached connection to avoid creating multiple connections in Next.js
 let cached = global.mongoose;
 
 if (!cached) {
@@ -16,16 +17,27 @@ if (!cached) {
 
 export async function connectDB() {
   if (cached.conn) {
-    // Use existing connection if available
     return cached.conn;
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose
-      .connect(MONGODB_URI) // ✅ Removed deprecated options
-      .then((mongoose) => mongoose);
+    const opts = {
+      bufferCommands: false, // Disable mongoose buffering
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log("MongoDB connected successfully");
+      return mongoose;
+    });
   }
 
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null; // Reset on failure so it retries next time
+    console.error("MongoDB connection error:", e);
+    throw e;
+  }
+
   return cached.conn;
 }
