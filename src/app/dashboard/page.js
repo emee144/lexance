@@ -1,22 +1,62 @@
 "use client";
 import Image from "next/image";
-import { useState, useEffect, Suspense } from "react";
-import dynamic from "next/dynamic";
+import { useState, useEffect } from "react";
 
-import AnimatedCard from "@/components/AnimatedCard";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import CryptoSavingsCarousel from "@/components/CryptoSavingsCarousel";
 import DepositDrawerContent from "@/components/DepositDrawerContent";
 import DepositCryptoPage from "@/app/deposit/crypto/page";
+import WithdrawForm from "@/components/WithdrawForm";
+import AnimatedCard from "@/components/AnimatedCard";
 
 export default function Dashboard() {
+  const [assets, setAssets] = useState([]);
   const [coins, setCoins] = useState([]);
-  const [totalBalance] = useState(0);
-  const [totalPnl] = useState(0);
-  const [selectedDepositCoin, setSelectedDepositCoin] = useState("USDT");
   const [isDepositOpen, setIsDepositOpen] = useState(false);
-  const [depositView, setDepositView] = useState("main"); // "main" or "crypto"
+  const [depositView, setDepositView] = useState("main");
+  const [selectedDepositCoin, setSelectedDepositCoin] = useState("USDT");
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
+const fetchAssets = async () => {
+  try {
+    // Get token from localStorage (or your auth context)
+    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("jwt");
+
+    if (!token) {
+      console.error("No token found — redirecting to login");
+      window.location.href = "/login";
+      return;
+    }
+
+    const res = await fetch("/api/auth/assets", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,  // THIS IS THE KEY LINE
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      console.error("API Error:", res.status, error);
+      
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
+      throw new Error(error.error || "Failed to load assets");
+    }
+
+    const data = await res.json();
+    setAssets(data);
+  } catch (err) {
+    console.error("Fetch assets failed:", err);
+    setAssets([]);
+  }
+};
+
+  // Fetch live spot prices
   const fetchSpotData = async () => {
     try {
       const res = await fetch(
@@ -34,31 +74,41 @@ export default function Dashboard() {
       }));
       setCoins(formatted);
     } catch (error) {
-      console.error("Failed to fetch coins:", error);
+      console.error("Failed to fetch spot data:", error);
     }
   };
 
+  // Load data on mount + refresh
   useEffect(() => {
+    fetchAssets();
     fetchSpotData();
-    const interval = setInterval(fetchSpotData, 8000);
-    return () => clearInterval(interval);
+
+    const assetsInterval = setInterval(fetchAssets, 10000);
+    const spotInterval = setInterval(fetchSpotData, 8000);
+
+    return () => {
+      clearInterval(assetsInterval);
+      clearInterval(spotInterval);
+    };
   }, []);
 
-  const assets = [
-    { name: "BTC", balance: 0.5, value: 30000, change: 2.5 },
-    { name: "ETH", balance: 10, value: 2500, change: -1.2 },
-    { name: "USDT", balance: 1000, value: 1000, change: 0 },
-  ];
+  // REAL calculations
+  const totalBalance = assets.reduce((sum, a) => sum + a.value, 0);
+  const totalPnlWeighted = assets.length > 0
+    ? assets.reduce((sum, a) => sum + (a.change * a.value), 0) / totalBalance
+    : 0;
 
-  const orders = [
-    { pair: "BTC/USDT", type: "Buy", amount: 0.1, price: 60000, status: "Filled" },
-    { pair: "ETH/USDT", type: "Sell", amount: 5, price: 2500, status: "Pending" },
-  ];
-
+const orders = [
+  { pair: "BTC/USDT", type: "Buy", amount: 0.005, price: 61234.56, status: "Filled", time: "2 min ago" },
+  { pair: "ETH/USDT", type: "Sell", amount: 1.2, price: 2654.32, status: "Filled", time: "5 min ago" },
+  { pair: "SOL/USDT", type: "Buy", amount: 15, price: 138.45, status: "Pending", time: "8 min ago" },
+];
   const openDeposit = (view = "main") => {
     setDepositView(view);
     setIsDepositOpen(true);
   };
+
+  const openWithdraw = () => setIsWithdrawOpen(true);
 
   return (
     <div className="font-sans bg-gray-50 dark:bg-black min-h-screen flex flex-col">
@@ -67,7 +117,7 @@ export default function Dashboard() {
       {/* Hero Section */}
       <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-8 py-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
-          <div className="text-center md:text-left mb-4 md:mb-0">
+          <div className="text-center md:text-left mb-6 md:mb-0">
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
               Your Lexance crypto journey, simplified.
             </h1>
@@ -76,23 +126,24 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 md:p-6 text-center">
-            <div className="text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
-              Total Balance
+          {/* Total Balance Card */}
+          <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 text-center shadow-lg">
+            <div className="text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wider font-medium mb-2">
+              Total Portfolio Value
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">
-              ${totalBalance.toLocaleString()}
+            <div className="text-4xl font-bold text-gray-900 dark:text-white">
+              ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className={`text-sm font-medium mt-1 ${totalPnl >= 0 ? "text-green-600" : "text-red-600"}`}>
-              {totalPnl >= 0 ? "+" : ""}{totalPnl.toFixed(2)}% Today
+            <div className={`text-lg font-semibold mt-2 ${totalPnlWeighted >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {totalPnlWeighted >= 0 ? "Up" : "Down"} {Math.abs(totalPnlWeighted).toFixed(2)}% Today
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto text-center mt-6">
+        <div className="max-w-7xl mx-auto text-center mt-8">
           <button
             onClick={() => openDeposit("main")}
-            className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+            className="px-10 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition"
           >
             Deposit Now
           </button>
@@ -104,34 +155,49 @@ export default function Dashboard() {
         {/* Sidebar */}
         <div className="w-full lg:w-1/3 space-y-6">
           {/* Assets */}
-          <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Assets</h2>
-            <div className="space-y-3">
-              {assets.map((asset, i) => (
-                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src={`/${asset.name.toLowerCase()}.png`}
-                      alt={asset.name}
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">{asset.name}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">{asset.balance} {asset.name}</div>
+          <section className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-800">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Your Assets</h2>
+            {assets.length === 0 ? (
+              <p className="text-center text-gray-500 py-12">No assets yet. Deposit to start!</p>
+            ) : (
+              <div className="space-y-4">
+                {assets.map((asset) => (
+                  <div
+                    key={`${asset.symbol}-${asset.network}`}
+                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Image
+                        src={`/${asset.symbol.toLowerCase()}.png`}
+                        alt={asset.name}
+                        width={48}
+                        height={48}
+                        className="rounded-full ring-4 ring-white dark:ring-gray-900 shadow-md"
+                        unoptimized
+                      />
+                      <div>
+                        <div className="font-bold text-gray-900 dark:text-white">
+                          {asset.symbol}
+                          {asset.network && <span className="text-xs text-gray-500 ml-2">({asset.network})</span>}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {asset.balance.toFixed(6)} {asset.symbol}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-gray-900 dark:text-white">
+                        ${asset.value.toLocaleString()}
+                      </div>
+                      <div className={`text-sm font-medium ${asset.change >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        {asset.change >= 0 ? "Up" : "Down"} {Math.abs(asset.change).toFixed(2)}%
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-gray-900 dark:text-white">${asset.value.toLocaleString()}</div>
-                    <div className={`text-sm ${asset.change >= 0 ? "text-green-600" : "text-red-600"}`}>
-                      {asset.change >= 0 ? "+" : ""}{asset.change}%
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button className="w-full mt-4 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                ))}
+              </div>
+            )}
+            <button className="w-full mt-6 px-6 py-3 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition">
               View All Assets
             </button>
           </section>
@@ -143,7 +209,7 @@ export default function Dashboard() {
               <button onClick={() => openDeposit("main")} className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 Deposit
               </button>
-              <button className="px-4 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950">
+              <button onClick={() => openWithdraw()} className="px-4 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950">
                 Withdraw
               </button>
               <button className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">Buy Crypto</button>
@@ -344,22 +410,54 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Content — THIS IS THE ONLY PART THAT CHANGED */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto">
-  {depositView === "main" ? (
-    <DepositDrawerContent
-      onSelectCrypto={(coin) => {
-        setSelectedDepositCoin(coin);   // ← use React state (best way)
-        setDepositView("crypto");
-      }}
+        {depositView === "main" ? (
+          <DepositDrawerContent
+            onSelectCrypto={(coin) => {
+              setSelectedDepositCoin(coin);
+              setDepositView("crypto");
+            }}
+          />
+        ) : (
+          <DepositCryptoPage
+            selectedCoin={selectedDepositCoin}
+            onBack={() => setDepositView("main")}
+          />
+        )}
+      </div>
+    </div>
+  </>
+)}
+
+{/* ==================== WITHDRAW DRAWER ==================== */}
+{isWithdrawOpen && (
+  <>
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 z-40"
+      onClick={() => setIsWithdrawOpen(false)}
     />
-  ) : (
-    <DepositCryptoPage
-      selectedCoin={selectedDepositCoin}   // ← pass the coin here
-      onBack={() => setDepositView("main")}
-    />
-  )}
-</div>
+
+    {/* Drawer */}
+    <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col">
+      {/* Header */}
+      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-6 flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Withdraw</h2>
+        <button
+          onClick={() => setIsWithdrawOpen(false)}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <WithdrawForm />
+      </div>
     </div>
   </>
 )}

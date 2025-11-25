@@ -186,16 +186,20 @@ export default function DashboardNavbar() {
             <div className="p-6 space-y-8">
               {/* Deposit Crypto */}
               <div
-                onClick={() => alert("Redirecting to Crypto Deposit...")}
-                className="bg-linear-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-2xl p-8 cursor-pointer hover:shadow-xl transition-all border border-blue-200 dark:border-blue-800"
-              >
-                <h3 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-3">
-                  Deposit Crypto
-                </h3>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Already have crypto? Deposit directly
-                </p>
-              </div>
+  onClick={() => {
+    setIsDepositOpen(false); // optional: close drawer
+    router.push("/deposit/crypto"); // redirect to crypto deposit page
+  }}
+  className="bg-linear-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-2xl p-8 cursor-pointer hover:shadow-xl transition-all border border-blue-200 dark:border-blue-800"
+>
+  <h3 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-3">
+    Deposit Crypto
+  </h3>
+  <p className="text-gray-700 dark:text-gray-300">
+    Already have crypto? Deposit directly
+  </p>
+</div>
+
 
               {/* Don't have crypto */}
               <div>

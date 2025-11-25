@@ -1,4 +1,6 @@
 // app/deposit/page.jsx
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 
@@ -40,43 +42,37 @@ export default function DepositLandingPage() {
             Popular Coins
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {supportedCoins
-              .filter(c => c.popular)
-              .map((item) => (
-                <Link
-                  key={item.coin}
-                  href={`/deposit/crypto?coin=${item.coin}`}
-                  className="group"
-                >
-                  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all hover:scale-105 border border-gray-200 dark:border-gray-800">
-                    <div className="flex items-center gap-4">
-                      <Image
-                        src={`/${item.coin.toLowerCase()}.png`}
-                        alt={item.coin}
-                        width={48}
-                        height={48}
-                        className="rounded-full"
-                      />
-                      <div>
-                        <div className="font-bold text-gray-900 dark:text-white text-lg">
-                          {item.coin}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {item.name}
-                        </div>
+            {supportedCoins.filter(c => c.popular).map((item) => (
+              <Link key={item.coin} href={`/deposit/crypto?coin=${item.coin}`}>
+                <div className="group bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all hover:scale-105 border border-gray-200 dark:border-gray-800 cursor-pointer">
+                  <div className="flex items-center gap-4">
+                    <Image
+                      src={`/${item.coin.toLowerCase()}.png`}
+                      alt={item.coin}
+                      width={48}
+                      height={48}
+                      className="rounded-full"
+                    />
+                    <div>
+                      <div className="font-bold text-gray-900 dark:text-white text-lg">
+                        {item.coin}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {item.name}
                       </div>
                     </div>
-                    <div className="mt-4 text-xs text-gray-500">
-                      {item.networks.join(" · ")}
-                    </div>
-                    <div className="mt-4 text-right">
-                      <span className="text-blue-600 font-medium group-hover:underline">
-                        Deposit →
-                      </span>
-                    </div>
                   </div>
-                </Link>
-              ))}
+                  <div className="mt-4 text-xs text-gray-500">
+                    {item.networks.join(" · ")}
+                  </div>
+                  <div className="mt-4 text-right">
+                    <span className="text-blue-600 font-medium group-hover:underline">
+                      Deposit →
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
 
@@ -87,12 +83,8 @@ export default function DepositLandingPage() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {supportedCoins.map((item) => (
-              <Link
-                key={item.coin}
-                href={`/deposit/crypto?coin=${item.coin}`}
-                className="group"
-              >
-                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md p-5 hover:shadow-xl transition-all hover:scale-105 border border-gray-200 dark:border-gray-800 text-center">
+              <Link key={item.coin} href={`/deposit/crypto?coin=${item.coin}`}>
+                <div className="group bg-white dark:bg-gray-900 rounded-2xl shadow-md p-5 hover:shadow-xl transition-all hover:scale-105 border border-gray-200 dark:border-gray-800 text-center cursor-pointer">
                   <Image
                     src={`/${item.coin.toLowerCase()}.png`}
                     alt={item.coin}
