@@ -1,4 +1,3 @@
-// models/P2POffer.js
 import mongoose from "mongoose";
 
 const P2POfferSchema = new mongoose.Schema({
@@ -6,11 +5,11 @@ const P2POfferSchema = new mongoose.Schema({
   type: { type: String, enum: ["buy", "sell"], required: true }, // sell = merchant wants NGN, gives USDT
   coin: { type: String, default: "USDT" },
   fiat: { type: String, default: "NGN" },
-  price: { type: Number, required: true },        // e.g. 1620 NGN per USDT
-  availableAmount: { type: Number, required: true }, // in USDT
-  minOrder: { type: Number, default: 5000 },      // min NGN
+  price: { type: Number, required: true },        
+  availableAmount: { type: Number, required: true }, 
+  minOrder: { type: Number, default: 5000 },    
   maxOrder: { type: Number, required: true },
-  paymentMethods: [{ type: String }],             // ["Bank Transfer", "Opay"]
+  paymentMethods: [{ type: String }],             
   completionTime: { type: String, default: "15 min" },
   isActive: { type: Boolean, default: true },
   completedOrders: { type: Number, default: 0 },

@@ -23,25 +23,48 @@ const DepositAddressSchema = new mongoose.Schema(
         "TRC20",
         "ERC20",
         "BEP20",
-        "BTC",        
-        "BTC-BECH32", 
+        "BTC",
+        "BTC-BECH32",
         "SOL",
         "ADA",
       ],
     },
 
-    address: { type: String, required: true, unique: true, trim: true },
-    tag: { type: String },
-    isActive: { type: Boolean, default: true },
-    totalDeposited: { type: Number, default: 0 },
-    transactionCount: { type: Number, default: 0 },
-    generatedAt: { type: Date, default: Date.now },
+    address: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-    // ADD THIS FIELD — REQUIRED FOR YOUR DASHBOARD
+    tag: {
+      type: String,
+      default: null,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
     balance: {
       type: Number,
       default: 0,
       min: 0,
+    },
+
+    totalDeposited: {
+      type: Number,
+      default: 0,
+    },
+
+    transactionCount: {
+      type: Number,
+      default: 0,
+    },
+
+    generatedAt: {
+      type: Date,
+      default: Date.now,
     },
 
     lastUpdated: {
@@ -52,15 +75,25 @@ const DepositAddressSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Indexes
-DepositAddressSchema.index({ user: 1, coin: 1, network: 1 }, { unique: true });
-DepositAddressSchema.index({ isActive: 1 });
-DepositAddressSchema.index({ balance: 1 }); // for fast queries on non-zero balances
+DepositAddressSchema.index(
+  { user: 1, coin: 1, network: 1 },
+  { unique: true }
+);
 
-// Optional: ensure balance is a real number when sent to frontend
+DepositAddressSchema.index(
+  { address: 1, network: 1 },
+  { unique: true }
+);
+
+DepositAddressSchema.index({ isActive: 1 });
+DepositAddressSchema.index({ balance: 1 });
+
+// Ensure numeric values when sent to frontend
 DepositAddressSchema.set("toJSON", {
-  transform: (doc, ret) => {
+  transform: (_, ret) => {
     ret.balance = Number(ret.balance);
+    ret.totalDeposited = Number(ret.totalDeposited);
+    ret.transactionCount = Number(ret.transactionCount);
     return ret;
   },
 });

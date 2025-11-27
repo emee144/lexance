@@ -8,6 +8,14 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    async function fetchPrices(ids) {
+      const res = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`
+      );
+      const data = await res.json();
+      return data;
+    }
+
     async function loadAssets() {
       try {
         const token = localStorage.getItem("token");
@@ -31,7 +39,25 @@ export default function AssetsPage() {
           return;
         }
 
-        setAssets(data);
+        // Map your symbols to CoinGecko IDs
+        const coinMap = {
+          btc: "bitcoin",
+          eth: "ethereum",
+          usdt: "tether",
+          trx: "tron"
+        };
+
+        const ids = data.map(a => coinMap[a.symbol.toLowerCase()]).filter(Boolean);
+        const priceData = await fetchPrices(ids);
+
+        // Calculate dynamic asset values
+        const updatedAssets = data.map(a => {
+          const id = coinMap[a.symbol.toLowerCase()];
+          const priceUSD = priceData[id]?.usd || 0;
+          return { ...a, value: a.balance * priceUSD };
+        });
+
+        setAssets(updatedAssets);
       } catch (err) {
         console.error(err);
         setError("Failed to fetch assets");

@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 
 import DashboardNavbar from "@/components/DashboardNavbar";
@@ -19,44 +20,41 @@ export default function Dashboard() {
 
 const fetchAssets = async () => {
   try {
-    // Get token from localStorage (or your auth context)
-    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("jwt");
+    const token = localStorage.getItem("token");
+    if (!token) return window.location.href = "/login";
 
-    if (!token) {
-      console.error("No token found — redirecting to login");
-      window.location.href = "/login";
-      return;
-    }
-
+    // Fetch user balances
     const res = await fetch("/api/auth/assets", {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,  // THIS IS THE KEY LINE
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-
-    if (!res.ok) {
-      const error = await res.json();
-      console.error("API Error:", res.status, error);
-      
-      if (res.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/login";
-      }
-      throw new Error(error.error || "Failed to load assets");
-    }
-
+    if (!res.ok) throw new Error("Failed to fetch assets");
     const data = await res.json();
-    setAssets(data);
+
+    // Map symbols to CoinGecko IDs
+    const coinMap = { btc: "bitcoin", eth: "ethereum", usdt: "tether", sol: "solana" /* ... etc */ };
+    const ids = data.map(a => coinMap[a.symbol.toLowerCase()]).filter(Boolean);
+
+    // Fetch live USD prices
+    const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`);
+    const priceData = await priceRes.json();
+
+    // Calculate values
+    const updatedAssets = data.map(a => {
+      const id = coinMap[a.symbol.toLowerCase()];
+      const priceUSD = priceData[id]?.usd ?? 0;
+      return { ...a, value: a.balance * priceUSD };
+    });
+
+    // Update state **only after all prices are fetched**
+    setAssets(updatedAssets);
+
   } catch (err) {
-    console.error("Fetch assets failed:", err);
-    setAssets([]);
+    console.error(err);
+   
   }
 };
 
-  // Fetch live spot prices
   const fetchSpotData = async () => {
     try {
       const res = await fetch(
@@ -197,9 +195,11 @@ const orders = [
                 ))}
               </div>
             )}
-            <button className="w-full mt-6 px-6 py-3 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-              View All Assets
-            </button>
+            <Link href="/dashboard/assets">
+  <button className="w-full mt-6 px-6 py-3 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer">
+    View All Assets
+  </button>
+</Link>
           </section>
 
           {/* Quick Actions */}
@@ -212,7 +212,9 @@ const orders = [
               <button onClick={() => openWithdraw()} className="px-4 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950">
                 Withdraw
               </button>
+              <Link href="/deposit/crypto">
               <button className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">Buy Crypto</button>
+              </Link>
               <button className="px-4 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950">
                 Earn
               </button>

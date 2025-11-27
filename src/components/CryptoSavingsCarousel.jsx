@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 const products = [
   { coin: "USDT", apr: "555.00", label: "New", hot: false },

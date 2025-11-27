@@ -1,21 +1,70 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function WithdrawForm() {
   const [amount, setAmount] = useState("");
   const [selectedCoin, setSelectedCoin] = useState("USDT");
   const [selectedNetwork, setSelectedNetwork] = useState("");
   const [withdrawAddress, setWithdrawAddress] = useState("");
+  const [balances, setBalances] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  // Define network options per coin
   const networkOptions = {
     USDT: ["TRC20", "ERC20", "BEP20"],
     ETH: ["ERC20"],
     BTC: ["BTC", "BTC-Bech32"],
     BNB: ["BEP2", "BEP20"],
+    TRX: ["TRC20"],
   };
 
-  // Update network when coin changes
+ const fetchBalances = async () => {
+  try {
+    setLoading(true);
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      console.error("NO TOKEN FOUND");
+      setBalances({});
+      return;
+    }
+
+    const res = await fetch("/api/auth/assets", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // 🔥 REQUIRED
+      },
+    });
+
+    if (!res.ok) {
+      console.error("Auth failed:", res.status);
+      setBalances({});
+      return;
+    }
+
+    const data = await res.json();
+    console.log("ASSETS RESPONSE:", data);
+
+    const balanceMap = {};
+    data.forEach(asset => {
+      balanceMap[asset.symbol] = asset.balance;
+    });
+
+    setBalances(balanceMap);
+    setSelectedNetwork(networkOptions[selectedCoin][0]);
+  } catch (err) {
+    console.error("Fetch failed:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  useEffect(() => {
+    fetchBalances();
+  }, []);
+
   const handleCoinChange = (coin) => {
     setSelectedCoin(coin);
     const defaultNetwork = networkOptions[coin][0];
@@ -27,15 +76,30 @@ export default function WithdrawForm() {
       alert("Please fill all fields.");
       return;
     }
+
+    const availableBalance = balances[selectedCoin] || 0;
+    if (parseFloat(amount) > availableBalance) {
+      alert(`Insufficient balance. Your ${selectedCoin} balance is ${availableBalance}.`);
+      return;
+    }
+
     alert(
       `Withdrawing ${amount} ${selectedCoin} via ${selectedNetwork} to ${withdrawAddress}`
     );
-    // Call your API here
+    // Call your withdrawal API here
   };
 
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold text-gray-900 dark:text-white">Withdraw Funds</h3>
+
+      {loading ? (
+        <p>Loading balances...</p>
+      ) : (
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Available {selectedCoin} balance: {balances[selectedCoin] || 0}
+        </p>
+      )}
 
       {/* Coin Selection */}
       <div>
@@ -45,10 +109,11 @@ export default function WithdrawForm() {
           onChange={(e) => handleCoinChange(e.target.value)}
           className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
         >
-          <option value="USDT">USDT</option>
-          <option value="BTC">BTC</option>
-          <option value="ETH">ETH</option>
-          <option value="BNB">BNB</option>
+          {Object.keys(networkOptions).map((coin) => (
+            <option key={coin} value={coin}>
+              {coin}
+            </option>
+          ))}
         </select>
       </div>
 
