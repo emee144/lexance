@@ -16,55 +16,51 @@ export default function AssetsPage() {
       return data;
     }
 
-    async function loadAssets() {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Not authenticated");
-          setLoading(false);
-          return;
-        }
+async function loadAssets() {
+  try {
+    setLoading(true);
+    setError(null);
 
-        const res = await fetch("/api/auth/assets", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    const res = await fetch("/api/auth/assets", {
+      credentials: "include",
+    });
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error || "Failed to fetch assets");
-          setLoading(false);
-          return;
-        }
-
-        // Map your symbols to CoinGecko IDs
-        const coinMap = {
-          btc: "bitcoin",
-          eth: "ethereum",
-          usdt: "tether",
-          trx: "tron"
-        };
-
-        const ids = data.map(a => coinMap[a.symbol.toLowerCase()]).filter(Boolean);
-        const priceData = await fetchPrices(ids);
-
-        // Calculate dynamic asset values
-        const updatedAssets = data.map(a => {
-          const id = coinMap[a.symbol.toLowerCase()];
-          const priceUSD = priceData[id]?.usd || 0;
-          return { ...a, value: a.balance * priceUSD };
-        });
-
-        setAssets(updatedAssets);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch assets");
+    if (!res.ok) {
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
       }
-
-      setLoading(false);
+      throw new Error("Failed to load assets");
     }
+
+    const data = await res.json(); // <-- THIS WAS MISSING
+
+    // Map symbols to CoinGecko IDs
+    const coinMap = {
+      btc: "bitcoin",
+      eth: "ethereum",
+      usdt: "tether",
+      trx: "tron",
+    };
+
+    const ids = data.map(a => coinMap[a.symbol.toLowerCase()]).filter(Boolean);
+
+    const priceData = await fetchPrices(ids);
+
+    const updatedAssets = data.map(a => {
+      const id = coinMap[a.symbol.toLowerCase()];
+      const priceUSD = priceData[id]?.usd || 0;
+      return { ...a, value: a.balance * priceUSD };
+    });
+
+    setAssets(updatedAssets);
+  } catch (err) {
+    console.error(err);
+    setError("Failed to fetch assets");
+  } finally {
+    setLoading(false);
+  }
+}
 
     loadAssets();
   }, []);

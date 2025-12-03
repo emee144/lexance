@@ -9,6 +9,8 @@ import DepositDrawerContent from "@/components/DepositDrawerContent";
 import DepositCryptoPage from "@/app/deposit/crypto/page";
 import WithdrawForm from "@/components/WithdrawForm";
 import AnimatedCard from "@/components/AnimatedCard";
+import WithdrawalHistory from "@/components/WithdrawalHistory";
+
 
 export default function Dashboard() {
   const [assets, setAssets] = useState([]);
@@ -20,18 +22,23 @@ export default function Dashboard() {
 
 const fetchAssets = async () => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) return window.location.href = "/login";
-
-    // Fetch user balances
     const res = await fetch("/api/auth/assets", {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",   // This sends the httpOnly cookie automatically
       cache: "no-store",
     });
-    if (!res.ok) throw new Error("Failed to fetch assets");
-    const data = await res.json();
 
-    // Map symbols to CoinGecko IDs
+    // If 401 = not logged in or cookie expired → go to login
+    if (res.status === 401) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch assets");
+    }
+
+    const data = await res.json();
+  
     const coinMap = { btc: "bitcoin", eth: "ethereum", usdt: "tether", sol: "solana" /* ... etc */ };
     const ids = data.map(a => coinMap[a.symbol.toLowerCase()]).filter(Boolean);
 
@@ -46,7 +53,6 @@ const fetchAssets = async () => {
       return { ...a, value: a.balance * priceUSD };
     });
 
-    // Update state **only after all prices are fetched**
     setAssets(updatedAssets);
 
   } catch (err) {
@@ -76,7 +82,6 @@ const fetchAssets = async () => {
     }
   };
 
-  // Load data on mount + refresh
   useEffect(() => {
     fetchAssets();
     fetchSpotData();

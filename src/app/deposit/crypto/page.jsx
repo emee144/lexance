@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
+import CryptoDepositHistory from "@/components/CryptoDepositHistory";
 
 export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onBack }) {
   const [selectedCoin, setSelectedCoin] = useState(propCoin);
@@ -11,6 +12,7 @@ export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onB
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [history, setHistory] = useState([]);
 
   // Read coin from URL if provided
   useEffect(() => {
@@ -19,51 +21,72 @@ export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onB
     if (coinFromUrl) setSelectedCoin(coinFromUrl);
   }, []);
 
-  // Fetch deposit addresses whenever coin changes
+  // Fetch addresses
   useEffect(() => {
     async function fetchAddresses() {
       setLoading(true);
       setError("");
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Please login first");
-          setLoading(false);
-          return;
-        }
 
-        const res = await fetch(`${window.location.origin}/api/auth/deposit/address`, {
-          "Content-Type": "application/json",
-          headers: { Authorization: `Bearer ${token}` },
+      try {
+        const res = await fetch("/api/auth/deposits/address", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
         });
 
-        if (!res.ok) {
-          setError(`Failed to fetch deposit addresses: ${res.status}`);
+        if (res.status === 401) {
+          setError("Session expired. Please login again.");
           setLoading(false);
           return;
         }
 
-        const data = await res.json();
-        const coinAddresses = data.filter((d) => d.coin === selectedCoin);
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || "Failed to load address");
+        }
 
-        setNetworks(coinAddresses);
+        const data = await res.json(); // flat array from backend
+        console.log("Fetched addresses:", data);
 
-        if (coinAddresses.length > 0) {
-          setSelectedNetwork(coinAddresses[0].network);
-          setAddress(coinAddresses[0].address);
+        const coinNetworks = data.filter(item => item.coin === selectedCoin);
+        setNetworks(coinNetworks);
+
+        if (coinNetworks.length > 0) {
+          setSelectedNetwork(coinNetworks[0].network);
+          setAddress(coinNetworks[0].address);
         } else {
           setSelectedNetwork(null);
           setAddress("");
         }
+
       } catch (err) {
-        console.error(err);
-        setError("Network error while fetching addresses");
+        console.error("Fetch address error:", err);
+        setError(err.message || "Network error");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
-    fetchAddresses();
+    if (selectedCoin) fetchAddresses();
   }, [selectedCoin]);
+
+  // Fetch deposit history
+  useEffect(() => {
+    async function fetchHistory() {
+      try {
+        const res = await fetch("/api/auth/deposits/history", {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch deposit history");
+        const data = await res.json();
+        setHistory(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchHistory();
+  }, []);
 
   const handleNetworkChange = (network) => {
     setSelectedNetwork(network);
@@ -127,39 +150,30 @@ export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onB
 
       {/* QR + Address */}
       {address && (
-<div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-8 text-center">
-  {/* Centering QR Code */}
-  <div className="flex justify-center items-center mb-6">
-    <QRCodeSVG
-      value={address}
-      size={200}
-      fgColor="#2563EB"
-      className="block"
-    />
-  </div>
-
-  {/* Address text */}
-  <p className="font-mono text-sm break-all bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg w-full max-w-md mx-auto mb-2">
-    {address}
-  </p>
-
-  {/* Copy button below address */}
-  <button
-    onClick={() => {
-      navigator.clipboard.writeText(address);
-      alert("Address copied!");
-    }}
-    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-  >
-    Copy
-  </button>
-</div>
-
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-8 text-center">
+          <div className="flex justify-center items-center mb-6">
+            <QRCodeSVG value={address} size={200} fgColor="#2563EB" className="block" />
+          </div>
+          <p className="font-mono text-sm break-all bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg w-full max-w-md mx-auto mb-2">
+            {address}
+          </p>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(address);
+              alert("Address copied!");
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Copy
+          </button>
+        </div>
       )}
 
       {!loading && !address && !error && (
         <p className="text-center text-red-500">No address found for {selectedCoin}</p>
       )}
+
+      <CryptoDepositHistory />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react"; // Import Lucide icons
+import { Eye, EyeOff } from "lucide-react"; 
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -19,30 +19,33 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+ const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",     
+      cache: "no-store",
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (res.ok) {
-        localStorage.setItem("token", data.token);
-        setMessage("Login successful!");
-        setEmail("");
-        setPassword("");
-        router.push("/dashboard");
-      } else {
-        setMessage(data.error || "Invalid credentials.");
-      }
-    } catch (err) {
-      setMessage("Error connecting to server.");
+    if (res.ok) {
+      
+      setMessage("Login successful!");
+      setEmail("");
+      setPassword("");
+      router.push("/dashboard");   
+    } else {
+     
+      setMessage(data.error || "Invalid credentials");
     }
-
+  } catch (err) {
+    console.error("Login error:", err);
+    setMessage("Error connecting to server");
+  } finally {
     setLoading(false);
-  };
-
+  }
+};
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <form

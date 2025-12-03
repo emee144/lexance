@@ -1,6 +1,4 @@
-// models/DepositAddress.js
 import mongoose from "mongoose";
-
 const DepositAddressSchema = new mongoose.Schema(
   {
     user: {

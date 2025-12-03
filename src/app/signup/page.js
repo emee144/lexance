@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react"; 
 
 export default function SignupForm() {
+   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -15,27 +17,34 @@ export default function SignupForm() {
     setLoading(true);
     setMessage("");
 
-    try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+try {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",     
+      cache: "no-store",
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
 
-      const data = await res.json();
-      if (res.ok) {
-        setMessage("Signup successful! Please login.");
-        setEmail("");
-        setPassword("");
-      } else {
-        setMessage(data.error || "Something went wrong.");
-      }
-    } catch (err) {
-      setMessage("Error connecting to server.");
+    if (res.ok) {
+      
+      setMessage("Account created & logged in successfully!");
+      setEmail("");
+      setPassword("");
+      
+      router.push("/dashboard");
+    } else {
+      // Failed signup
+      setMessage(data.error || "Something went wrong.");
     }
-
+  } catch (err) {
+    console.error("Signup error:", err);
+    setMessage("Error connecting to server.");
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">

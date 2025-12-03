@@ -1,8 +1,7 @@
-// app/deposit/page.jsx
 "use client";
-
 import Link from "next/link";
 import Image from "next/image";
+import CryptoDepositHistory from "@/components/CryptoDepositHistory";
 
 const supportedCoins = [
   { coin: "USDT", name: "Tether", networks: ["TRC20", "ERC20", "BEP20"], popular: true },
@@ -35,8 +34,6 @@ export default function DepositLandingPage() {
             className="w-full px-6 py-4 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-lg focus:ring-4 focus:ring-blue-500 focus:border-transparent outline-none"
           />
         </div>
-
-        {/* Popular Coins */}
         <div className="mb-12">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
             Popular Coins
@@ -114,6 +111,7 @@ export default function DepositLandingPage() {
           </p>
         </div>
       </div>
+       <CryptoDepositHistory />
     </div>
   );
 }

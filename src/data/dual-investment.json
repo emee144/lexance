@@ -1,0 +1,40 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "pair": "BTC-USDT",
+      "type": "Buy Low",
+      "apr": "285.00%",
+      "duration": "1 Day",
+      "targetPrice": 108000,
+      "minAmount": 100
+    },
+    {
+      "id": 2,
+      "pair": "BTC-USDT",
+      "type": "Sell High",
+      "apr": "312.00%",
+      "duration": "3 Days",
+      "targetPrice": 95000,
+      "minAmount": 50
+    },
+    {
+      "id": 3,
+      "pair": "ETH-USDT",
+      "type": "Buy Low",
+      "apr": "198.50%",
+      "duration": "1 Day",
+      "targetPrice": 4800,
+      "minAmount": 100
+    },
+    {
+      "id": 4,
+      "pair": "ETH-USDT",
+      "type": "Sell High",
+      "apr": "224.00%",
+      "duration": "5 Days",
+      "targetPrice": 4200,
+      "minAmount": 50
+    }
+  ]
+}

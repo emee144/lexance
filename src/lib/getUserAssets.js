@@ -1,4 +1,3 @@
-// lib/getUserAssets.js
 import { connectDB } from "@/lib/mongodb";
 import DepositAddress from "@/models/DepositAddress";
 

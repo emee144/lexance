@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import WithdrawPage from "@/app/withdraw/page";
 
 export default function DashboardNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -56,6 +55,7 @@ export default function DashboardNavbar() {
                     <Link href="/dashboard/assets" className="block px-6 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Assets Overview</Link>
                     <Link href="/deposit" className="block px-6 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Deposit</Link>
                     <Link href="/withdraw" className="block px-6 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Withdraw</Link>
+                    <Link href="/transfer" className="block px-6 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Transfer</Link>
                     <div className="border-t border-gray-200 dark:border-gray-800 my-2 mx-4"></div>
                     <Link href="/dashboard/funding" className="block px-6 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Funding Account</Link>
                   </div>
@@ -72,7 +72,7 @@ export default function DashboardNavbar() {
 
   <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
     <div className="py-3">
-      <Link href="/dashboard/earn" className="block px-6 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium">
+      <Link href="/earn" className="block px-6 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium">
         Earn (Savings & Staking)
       </Link>
       <Link href="/dashboard/launchpool" className="block px-6 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">

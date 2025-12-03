@@ -1,21 +1,18 @@
 import { connectDB } from "@/lib/mongodb";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth"; 
 import DepositAddress from "@/models/DepositAddress";
 
 export async function GET(request) {
   await connectDB();
 
+  // This now reads from httpOnly cookie (no Authorization header!)
   const user = await getCurrentUser(request);
   if (!user) {
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),
       {
         status: 401,
-        headers: {
-          "Content-Type": "application/json",
-          // Optional: help clients know they need to log in
-          "WWW-Authenticate": "Bearer",
-        },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
@@ -79,14 +76,12 @@ export async function GET(request) {
         "Cache-Control": "s-maxage=60, stale-while-revalidate=30",
       },
     });
+
   } catch (error) {
     console.error("Assets API error:", error);
     return new Response(
       JSON.stringify({ error: "Server error" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }

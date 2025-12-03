@@ -4,62 +4,59 @@ import { useState, useEffect } from "react";
 export default function WithdrawForm() {
   const [amount, setAmount] = useState("");
   const [selectedCoin, setSelectedCoin] = useState("USDT");
-  const [selectedNetwork, setSelectedNetwork] = useState("");
+  const [selectedNetwork, setSelectedNetwork] = useState("TRC20");
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [balances, setBalances] = useState({});
   const [loading, setLoading] = useState(true);
+  const externalWithdrawalFees = {
+    USDT: { TRC20: 1, ERC20: 5, BEP20: 1 },
+    BTC: { BTC: 0.0005, "BTC-Bech32": 0.0005 },
+    ETH: { ERC20: 0.005 },
+    BNB: { BEP20: 0.001 },
+    TRX: { TRC20: 1 },
+  };
 
   const networkOptions = {
     USDT: ["TRC20", "ERC20", "BEP20"],
-    ETH: ["ERC20"],
     BTC: ["BTC", "BTC-Bech32"],
-    BNB: ["BEP2", "BEP20"],
+    ETH: ["ERC20"],
+    BNB: ["BEP20"],
     TRX: ["TRC20"],
   };
 
- const fetchBalances = async () => {
-  try {
-    setLoading(true);
+  const formatBalance = (value) => {
+    if (!value || value === 0) return "0";
+    const num = Number(value);
+    if (num >= 1) return Math.round(num).toString();
+    return num.toFixed(8).replace(/0+$/, "").replace(/\.$/, "");
+  };
 
-    const token = localStorage.getItem("token");
+  const fetchBalances = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/auth/assets", { credentials: "include", cache: "no-store" });
 
-    if (!token) {
-      console.error("NO TOKEN FOUND");
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      if (!res.ok) throw new Error("Failed to load balances");
+
+      const data = await res.json();
+      const balanceMap = {};
+      data.forEach((asset) => {
+        const symbol = asset.symbol;
+        const balance = Number(asset.balance || 0);
+        balanceMap[symbol] = (balanceMap[symbol] || 0) + balance;
+      });
+      setBalances(balanceMap);
+    } catch (err) {
+      console.error("Error loading balances:", err);
       setBalances({});
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    const res = await fetch("/api/auth/assets", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // 🔥 REQUIRED
-      },
-    });
-
-    if (!res.ok) {
-      console.error("Auth failed:", res.status);
-      setBalances({});
-      return;
-    }
-
-    const data = await res.json();
-    console.log("ASSETS RESPONSE:", data);
-
-    const balanceMap = {};
-    data.forEach(asset => {
-      balanceMap[asset.symbol] = asset.balance;
-    });
-
-    setBalances(balanceMap);
-    setSelectedNetwork(networkOptions[selectedCoin][0]);
-  } catch (err) {
-    console.error("Fetch failed:", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   useEffect(() => {
     fetchBalances();
@@ -67,102 +64,199 @@ export default function WithdrawForm() {
 
   const handleCoinChange = (coin) => {
     setSelectedCoin(coin);
-    const defaultNetwork = networkOptions[coin][0];
-    setSelectedNetwork(defaultNetwork);
+    setSelectedNetwork(networkOptions[coin][0]);
   };
 
-  const handleWithdraw = () => {
-    if (!withdrawAddress || !amount || !selectedNetwork) {
-      alert("Please fill all fields.");
-      return;
-    }
+  const handleMax = () => {
+    const max = balances[selectedCoin] || 0;
+    setAmount(max.toString());
+  };
 
-    const availableBalance = balances[selectedCoin] || 0;
-    if (parseFloat(amount) > availableBalance) {
-      alert(`Insufficient balance. Your ${selectedCoin} balance is ${availableBalance}.`);
+  const handleWithdraw = async () => {
+  if (!amount || !withdrawAddress || !selectedNetwork) {
+    alert("Please fill in all fields");
+    return;
+  }
+
+  const available = balances[selectedCoin] || 0;
+  if (Number(amount) > available) {
+    alert(`Insufficient balance. Available: ${formatBalance(available)} ${selectedCoin}`);
+    return;
+  }
+
+  // Network fee (example: you can adjust these values)
+  const externalWithdrawalFees = {
+    USDT: { TRC20: 1, ERC20: 5, BEP20: 1 },
+    BTC: { BTC: 0.0005, "BTC-Bech32": 0.0005 },
+    ETH: { ERC20: 0.005 },
+    BNB: { BEP20: 0.001 },
+    TRX: { TRC20: 1 },
+  };
+  const fee = externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0;
+
+  if (Number(amount) <= fee) {
+    alert("Amount must be greater than the network fee");
+    return;
+  }
+
+  const netAmount = Number(amount) - fee;
+
+  try {
+    const res = await fetch("/api/auth/withdraw", {
+      method: "POST",
+      credentials: "include", // sends HTTP-only cookie
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        coin: selectedCoin,
+        network: selectedNetwork,
+        amount: Number(amount),
+        withdrawAddress,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Withdrawal failed");
       return;
     }
 
     alert(
-      `Withdrawing ${amount} ${selectedCoin} via ${selectedNetwork} to ${withdrawAddress}`
+      `Withdrawal successful!\n` +
+      `Requested: ${amount} ${selectedCoin}\n` +
+      `Network Fee: ${fee} ${selectedCoin}\n` +
+      `You will receive: ${netAmount.toFixed(8)} ${selectedCoin}`
     );
-    // Call your withdrawal API here
-  };
+
+    // Update local balances
+    setBalances(prev => ({
+      ...prev,
+      [selectedCoin]: prev[selectedCoin] - Number(amount),
+    }));
+    setAmount(""); // reset amount
+    setWithdrawAddress(""); // reset address
+  } catch (err) {
+    console.error("Withdrawal error:", err);
+    alert("Server error, try again later");
+  }
+};
+
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Withdraw Funds</h3>
+    <div className="min-h-screen bg-linear-to-br from-gray-950 via-blue-950 to-black py-12 px-4">
+      <div className="max-w-5xl mx-auto"> {/* Wider container */}
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-white mb-2">Withdraw Crypto</h2> {/* Smaller text */}
+          <p className="text-gray-400 text-sm">Send funds to your external wallet instantly</p>
+        </div>
 
-      {loading ? (
-        <p>Loading balances...</p>
-      ) : (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Available {selectedCoin} balance: {balances[selectedCoin] || 0}
-        </p>
-      )}
+        <div className="bg-gray-900/90 backdrop-blur-2xl border border-gray-800 rounded-3xl p-8 shadow-2xl">
+          <div className="mb-8 p-6 bg-linear-to-r from-blue-900/30 to-purple-900/30 rounded-2xl border border-gray-700">
+            {loading ? (
+              <p className="text-gray-400 animate-pulse text-sm">Loading balance...</p>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider">Available Balance</p>
+                  <p className="text-4xl font-bold text-white mt-2">
+                    {formatBalance(balances[selectedCoin])}
+                  </p>
+                  <p className="text-xl text-gray-300 mt-1">{selectedCoin}</p>
+                </div>
+                <div className="w-24 h-24 bg-linear-to-br from-blue-500 to-purple-600 rounded-full opacity-20 blur-2xl"></div>
+              </div>
+            )}
+          </div>
 
-      {/* Coin Selection */}
-      <div>
-        <label className="block mb-2 text-gray-700 dark:text-gray-300">Coin</label>
-        <select
-          value={selectedCoin}
-          onChange={(e) => handleCoinChange(e.target.value)}
-          className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-        >
-          {Object.keys(networkOptions).map((coin) => (
-            <option key={coin} value={coin}>
-              {coin}
-            </option>
-          ))}
-        </select>
+          <div className="mb-8">
+            <label className="block text-gray-300 text-xs font-medium mb-2">Select Coin</label>
+            <div className="grid grid-cols-5 gap-2">
+              {Object.keys(networkOptions).map((coin) => (
+                <button
+                  key={coin}
+                  onClick={() => handleCoinChange(coin)}
+                  className={`py-2 px-4 rounded-xl font-semibold text-sm transition-all transform hover:scale-105 shadow-lg ${
+                    selectedCoin === coin
+                      ? "bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-blue-500/50"
+                      : "bg-gray-800/70 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                  }`}
+                >
+                  {coin}
+                </button>
+              ))}
+            </div>
+          </div>
+
+<div className="mb-6">
+  <label className="block text-gray-300 text-xs font-medium mb-1">Network</label>
+  <select
+    value={selectedNetwork}
+    onChange={(e) => setSelectedNetwork(e.target.value)}
+    className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+  >
+    {networkOptions[selectedCoin].map((net) => (
+      <option key={net} value={net} className="bg-gray-900 py-2">
+        {net} {net === "TRC20" ? "(Low Fee - Recommended)" : ""}
+      </option>
+    ))}
+  </select>
+</div>
+
+
+          <div className="mb-6">
+            <label className="block text-gray-300 text-xs font-medium mb-1">Withdrawal Address</label>
+            <input
+              type="text"
+              value={withdrawAddress}
+              onChange={(e) => setWithdrawAddress(e.target.value)}
+              placeholder="Paste wallet address here"
+              className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+            />
+          </div>
+
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-gray-300 text-xs font-medium">Amount</label>
+              <button
+                onClick={handleMax}
+                className="text-blue-400 hover:text-blue-300 font-medium transition text-xs"
+              >
+                Use Max
+              </button>
+            </div>
+            <input
+              type="number"
+              step="any"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-full px-4 py-3 bg-gray-800/70 border border-gray-700 rounded-xl text-white text-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+            />
+            <div className="mb-6 text-sm text-gray-300">
+  <p>Fee: {externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0} {selectedCoin}</p>
+  <p>
+    You will receive:{" "}
+    {amount
+      ? (Number(amount) - (externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0)).toFixed(8)
+      : "0"}{" "}
+    {selectedCoin}
+  </p>
+</div>
+          </div>
+
+          <button
+            onClick={handleWithdraw}
+            disabled={loading}
+            className="w-full py-4 bg-linear-to-r from-blue-600 via-blue-500 to-purple-600 text-white text-lg font-bold rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? "Loading..." : "Confirm Withdrawal"}
+          </button>
+
+          <p className="text-center text-gray-500 text-xs mt-4">
+            Network fee will be deducted • Usually arrives in 1-30 minutes
+          </p>
+        </div>
       </div>
-
-      {/* Network Selection */}
-      <div>
-        <label className="block mb-2 text-gray-700 dark:text-gray-300">Network</label>
-        <select
-          value={selectedNetwork}
-          onChange={(e) => setSelectedNetwork(e.target.value)}
-          className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-        >
-          {networkOptions[selectedCoin].map((network) => (
-            <option key={network} value={network}>
-              {network}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Withdrawal Address */}
-      <div>
-        <label className="block mb-2 text-gray-700 dark:text-gray-300">Withdrawal Address</label>
-        <input
-          type="text"
-          value={withdrawAddress}
-          onChange={(e) => setWithdrawAddress(e.target.value)}
-          className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-          placeholder="Enter withdrawal address"
-        />
-      </div>
-
-      {/* Amount */}
-      <div>
-        <label className="block mb-2 text-gray-700 dark:text-gray-300">Amount</label>
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-          placeholder="Enter amount"
-        />
-      </div>
-
-      <button
-        onClick={handleWithdraw}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition cursor-pointer"
-      >
-        Withdraw
-      </button>
     </div>
   );
 }
