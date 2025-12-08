@@ -55,7 +55,7 @@ export default function Footer() {
               <li><Link href="/earn" className="hover:text-blue-400 block py-1">Earn</Link></li>
               <li><Link href="/p2p" className="hover:text-blue-400 block py-1">P2P Trading</Link></li>
               <li><Link href="/wallet" className="hover:text-blue-400 block py-1">Wallet</Link></li>
-              <li><Link href="/api" className="hover:text-blue-400 block py-1">API</Link></li>
+  
             </ul>
           </div>
 

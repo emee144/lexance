@@ -4,8 +4,7 @@ import DepositAddress from "@/models/DepositAddress";
 
 export async function GET(request) {
   await connectDB();
-
-  // This now reads from httpOnly cookie (no Authorization header!)
+  
   const user = await getCurrentUser(request);
   if (!user) {
     return new Response(

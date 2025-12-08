@@ -23,7 +23,7 @@ export default function Dashboard() {
 const fetchAssets = async () => {
   try {
     const res = await fetch("/api/auth/assets", {
-      credentials: "include",   // This sends the httpOnly cookie automatically
+      credentials: "include",   
       cache: "no-store",
     });
 
@@ -42,7 +42,6 @@ const fetchAssets = async () => {
     const coinMap = { btc: "bitcoin", eth: "ethereum", usdt: "tether", sol: "solana" /* ... etc */ };
     const ids = data.map(a => coinMap[a.symbol.toLowerCase()]).filter(Boolean);
 
-    // Fetch live USD prices
     const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`);
     const priceData = await priceRes.json();
 

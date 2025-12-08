@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import CryptoSavingsCarousel from "@/components/CryptoSavingsCarousel";
+import CryptoSavingsGrid from "@/components/CryptoSavingsGrid";
 
 export default function Home() {
 const [menuOpen, setMenuOpen] = useState(false);
@@ -21,7 +22,6 @@ const fetchSpotData = async () => {
 
     const data = await res.json();
 
-    // Optional: map to only the fields you want
     const formatted = data.map((coin) => ({
       id: coin.id,
       pair: `${coin.symbol.toUpperCase()}/USDT`,
@@ -41,7 +41,7 @@ const fetchSpotData = async () => {
 };
 useEffect(() => {
   fetchSpotData();
-  const interval = setInterval(fetchSpotData, 5000); // optional: refresh every 5 seconds
+  const interval = setInterval(fetchSpotData, 5000); 
   return () => clearInterval(interval);
 }, []);
 
@@ -49,7 +49,6 @@ useEffect(() => {
 return ( <div className="font-sans bg-gray-50 dark:bg-black min-h-screen">
 <Navbar />
 
-  {/* Hero Section */}
   <section className="flex flex-col md:flex-row items-center justify-between px-8 py-24 max-w-7xl mx-auto">
     <div className="md:w-1/2">
       <h1 className="text-5xl font-bold mb-6 text-gray-900 dark:text-white">
@@ -65,28 +64,22 @@ return ( <div className="font-sans bg-gray-50 dark:bg-black min-h-screen">
           </Link>
         </button>
         <button className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50">
-          Learn More
+          <Link href="/about">
+          About
+          </Link>
         </button>
       </div>
     </div>
-   <div className="flex justify-end">  
-  <div className="md:w-1/2 mt-0 md:mt-0">
-    <Image 
-      src="/cry.png" 
-      alt="Crypto trading" 
-      width={800} 
-      height={800} 
-      
-    />
-  </div>
-</div>
+    
+   <CryptoSavingsGrid/>
+  
   </section>
   <section className="px-8 py-20 flex justify-center">
   <AnimatedCard />
   </section>
-  {/* Crypto Savings Section */}
+
  <CryptoSavingsCarousel />
-  {/* Features Section */}
+ 
   <section className="py-20 bg-white dark:bg-gray-900">
     <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12 px-8">
       <div className="text-center">

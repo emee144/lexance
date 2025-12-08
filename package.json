@@ -24,6 +24,7 @@
     "geist": "^1.5.1",
     "hdkey": "^2.1.0",
     "jsonwebtoken": "^9.0.2",
+    "lightweight-charts": "^5.0.9",
     "lucide-react": "^0.554.0",
     "mongoose": "^8.20.0",
     "next": "16.0.3",
