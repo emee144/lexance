@@ -1,5 +1,3 @@
-// app/careers/page.js   ← 100% JavaScript, no TypeScript
-
 export const metadata = {
   title: "Careers | Lexance",
   description: "Join the team building the future of decentralized finance.",

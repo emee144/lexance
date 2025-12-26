@@ -10,21 +10,21 @@ const { ObjectId } = mongoose.Types;
 async function run() {
   await mongoose.connect(process.env.MONGODB_URI);
 
-  const userId = new ObjectId("692e65063c90bcd23a27d45e");
+  const userId = new ObjectId("694d4e54280ee8751c427c47");
   const coin = "USDT";
   const network = "TRC20";
-  const amount = 100;
+  const amount = 100000;
   const txHash = "manual-test-" + Date.now();
-  const fromAddress = "SomeExternalAddress";
+  const fromAddress = "TJo5k9r3vL2mP8nQfG7xHsZ4uK1bD6cE9p";
 
   const deposit = await CryptoDeposit.create({ user: userId, coin, network, amount, txHash, fromAddress, status: "completed" });
-  console.log("✅ Deposit created and credited:", deposit);
+  console.log(" Deposit created and credited:", deposit);
 
   const depositAddress = await DepositAddress.findOne({ user: userId, coin, network });
   const wallet = await Wallet.findOne({ user: userId });
 
-  console.log("💰 Updated DepositAddress:", depositAddress);
-  console.log("👜 Updated Wallet:", wallet);
+  console.log(" Updated DepositAddress:", depositAddress);
+  console.log(" Updated Wallet:", wallet);
 
   await mongoose.disconnect();
 }

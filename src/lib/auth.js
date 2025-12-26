@@ -1,20 +1,20 @@
-// utils/getCurrentUser.js (or wherever you keep it)
 import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 
-export async function getCurrentUser(req) {
+export async function getCurrentUser() {
   try {
-    // 1. Get the httpOnly cookie (no more Authorization header!)
-    const cookieHeader = req.headers.get("cookie");
-    if (!cookieHeader) return null;
+    await connectDB();
 
-   
-    const tokenMatch = cookieHeader.match(/access_token=([^;]+)/);
-    if (!tokenMatch) return null;
+    const cookieStore = await cookies(); 
+    const token = cookieStore.get("access_token")?.value;
+    if (!token) return null;
 
-    const token = tokenMatch[1];
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET not set");
+    }
 
-    // 2. Verify JWT (same as before)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded?.id) return null;
 

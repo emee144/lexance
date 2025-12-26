@@ -42,7 +42,7 @@ const cryptoDepositSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["completed", "failed", "canceled"], // only relevant statuses
+    enum: ["completed", "failed", "canceled"], 
     default: "completed",
   },
   credited: {
@@ -62,7 +62,7 @@ const cryptoDepositSchema = new mongoose.Schema({
   collection: "cryptodeposits",
 });
 
-// INDEXES
+
 cryptoDepositSchema.index({ user: 1, status: 1, coin: 1 });
 cryptoDepositSchema.index({ credited: 1, createdAt: -1 });
 
@@ -87,14 +87,12 @@ cryptoDepositSchema.pre("save", async function(next) {
       { new: true, upsert: true }
     );
 
-    // 2️⃣ Update Wallet assets
     await Wallet.findOneAndUpdate(
       { user },
       { $inc: { [`assets.${coin}`]: amount } },
       { new: true, upsert: true }
     );
 
-    // 3️⃣ Mark as credited
     this.credited = true;
     this.creditedAt = new Date();
 

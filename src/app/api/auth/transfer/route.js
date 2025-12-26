@@ -4,10 +4,9 @@ import User from "@/models/User";
 import Wallet from "@/models/Wallet";
 import DepositAddress from "@/models/DepositAddress";
 
-// ------------------ Get user from access_token cookie ------------------
 async function getUserFromCookie(req) {
   try {
-    const token = req.cookies.get("access_token")?.value; 
+    const token = req.cookies.get("access_token")?.value;
     if (!token) return null;
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -25,126 +24,86 @@ export async function POST(req) {
   await connectDB();
 
   try {
-    // ------------------ AUTH ------------------
     const user = await getUserFromCookie(req);
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // ------------------ PARSE BODY ------------------
     let body;
     try {
       body = await req.json();
-      console.log("Body received:", body);
     } catch (err) {
-      console.error("Invalid JSON:", err);
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 });
     }
 
-    const { from, to, coin, amount } = body || {};
+    const { from, to, coin, amount } = body;
     const amt = parseFloat(amount);
 
     if (!from || !to || !coin || !amount) {
-      return new Response(
-        JSON.stringify({ error: "Missing fields" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
     }
-
     if (from === to) {
-      return new Response(
-        JSON.stringify({ error: "From and To cannot be the same" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Cannot transfer to same account" }), { status: 400 });
     }
-
     if (isNaN(amt) || amt <= 0) {
-      return new Response(
-        JSON.stringify({ error: "Invalid amount" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid amount" }), { status: 400 });
     }
 
-    // ------------------ GET OR CREATE WALLET ------------------
     let wallet = await Wallet.findOne({ user: user._id });
     if (!wallet) {
-      // Initialize empty wallet with all coins 0
-      const initAssets = {};
-      const initFunding = {};
-      ["USDT", "BTC", "ETH", "BNB", "SOL", "TRX", "ADA"].forEach((c) => {
-        initAssets[c] = 0;
-        initFunding[c] = 0;
-      });
-
+      const init = {};
+      ["USDT", "BTC", "ETH", "BNB", "SOL", "TRX", "ADA"].forEach(c => { init[c] = 0; });
       wallet = await Wallet.create({
         user: user._id,
-        assets: initAssets,
-        funding: initFunding,
+        assets: init,
+        funding: init,
       });
     }
-
-    // ------------------ SYNC ASSETS WITH DEPOSIT ------------------
-    const deposit = await DepositAddress.findOne({
+    const deposits = await DepositAddress.find({
       user: user._id,
       coin,
       isActive: true,
-    });
+    }).lean();
 
-    if (deposit) {
-      // Only update wallet assets for this coin if it's less than deposit
-      const currentAssets = wallet.assets.get(coin) || 0;
-      if (currentAssets < deposit.balance) {
-        wallet.assets.set(coin, deposit.balance);
-      }
+    let totalDeposited = 0;
+    for (const dep of deposits) {
+      totalDeposited += dep.balance || 0;
     }
-
-    // ------------------ VALIDATE BALANCE ------------------
-    const fromBalance = wallet[from].get(coin) || 0;
+    const currentAssets = wallet.assets.get(coin) || 0;
+    if (totalDeposited > currentAssets) {
+      wallet.assets.set(coin, totalDeposited);
+    }
+    const fromBalance = (from === "assets" ? wallet.assets.get(coin) : wallet.funding.get(coin)) || 0;
     if (fromBalance < amt) {
-      return new Response(
-        JSON.stringify({ error: "Insufficient balance" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Insufficient balance" }), { status: 400 });
     }
-
-    // ------------------ PERFORM TRANSFER ------------------
-    wallet[from].set(coin, fromBalance - amt);
-    const toBalance = wallet[to].get(coin) || 0;
-    wallet[to].set(coin, toBalance + amt);
+    if (from === "assets") {
+      wallet.assets.set(coin, fromBalance - amt);
+      wallet.funding.set(coin, (wallet.funding.get(coin) || 0) + amt);
+    } else {
+      wallet.funding.set(coin, fromBalance - amt);
+      wallet.assets.set(coin, (wallet.assets.get(coin) || 0) + amt);
+    }
 
     await wallet.save();
-
-    // ------------------ RETURN BALANCES ------------------
-    const depositBalances = await DepositAddress.find({
-      user: user._id,
-      coin,
-      isActive: true,
-    })
-      .select("coin network address balance")
-      .lean();
 
     return new Response(
       JSON.stringify({
         message: "Transfer successful",
-        walletBalances: {
-          assets: Object.fromEntries(wallet.assets),
-          funding: Object.fromEntries(wallet.funding),
-        },
-        depositBalances,
+        assets: Object.fromEntries(wallet.assets),
+        funding: Object.fromEntries(wallet.funding),
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
     );
+
   } catch (err) {
     console.error("Transfer API error:", err);
-    return new Response(
-      JSON.stringify({ error: "Server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Server error" }), { status: 500 });
   }
 }

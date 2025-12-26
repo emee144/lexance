@@ -29,16 +29,16 @@ export default function LoginPage() {
 
     const data = await res.json();
 
-    if (res.ok) {
-      
-      setMessage("Login successful!");
-      setEmail("");
-      setPassword("");
-      router.push("/dashboard");   
-    } else {
-     
-      setMessage(data.error || "Invalid credentials");
-    }
+if (res.ok) {
+  setMessage("Login successful!");
+  setEmail("");
+  setPassword("");
+
+  router.refresh();       
+  router.push("/dashboard");
+} else {
+  setMessage(data.error || "Invalid credentials");
+}
   } catch (err) {
     console.error("Login error:", err);
     setMessage("Error connecting to server");

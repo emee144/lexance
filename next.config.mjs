@@ -2,7 +2,7 @@
 const nextConfig = {
   reactCompiler: true,
   turbopack: {
-    root: process.cwd(), // Explicitly set the root to current working directory
+    root: process.cwd(), 
   },
   images: {
     remotePatterns: [
