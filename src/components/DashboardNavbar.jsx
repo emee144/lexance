@@ -10,11 +10,11 @@ export default function DashboardNavbar() {
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.clear();
-    document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    router.push("/login");
-  };
+const handleLogout = async () => {
+  await fetch("/api/auth/logout", { method: "POST" });
+  localStorage.clear();
+  router.push("/");
+};
 
   return (
     <>
@@ -23,7 +23,7 @@ export default function DashboardNavbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
 
-            {/* Logo */}
+          
             <div className="flex items-center">
               <Link href="/dashboard">
                 <Image

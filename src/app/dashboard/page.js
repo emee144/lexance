@@ -27,7 +27,6 @@ const fetchAssets = async () => {
       cache: "no-store",
     });
 
-    // If 401 = not logged in or cookie expired → go to login
     if (res.status === 401) {
       window.location.href = "/login";
       return;
@@ -94,7 +93,6 @@ const fetchAssets = async () => {
     };
   }, []);
 
-  // REAL calculations
   const totalBalance = assets.reduce((sum, a) => sum + a.value, 0);
   const totalPnlWeighted = assets.length > 0
     ? assets.reduce((sum, a) => sum + (a.change * a.value), 0) / totalBalance

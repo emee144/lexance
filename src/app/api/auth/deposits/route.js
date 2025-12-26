@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/mongodb";
@@ -8,7 +10,8 @@ export async function GET(req) {
   try {
     await connectDB();
 
-    const token = req.cookies.get("access_token")?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     let decoded;
