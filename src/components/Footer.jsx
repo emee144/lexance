@@ -65,7 +65,6 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li><Link href="/support/request" className="hover:text-blue-400 block py-1">Submit Request</Link></li>
               <li><Link href="/help" className="hover:text-blue-400 block py-1">Help Center</Link></li>
-              <li><Link href="/fees" className="hover:text-blue-400 block py-1">Fees</Link></li>
               <li><Link href="/verification" className="hover:text-blue-400 block py-1">Verification</Link></li>
               <li><Link href="/contact" className="hover:text-blue-400 block py-1">Contact Us</Link></li>
             </ul>
@@ -75,9 +74,8 @@ export default function Footer() {
           <div>
             <h4 className="text-orange-500 font-semibold mb-3">Products</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/trade" className="hover:text-blue-400 block py-1">Trade</Link></li>
-              <li><Link href="/spot" className="hover:text-blue-400 block py-1">Spot</Link></li>
-              <li><Link href="/derivatives" className="hover:text-blue-400 block py-1">Derivatives</Link></li>
+              <li><Link href="/trade/spot" className="hover:text-blue-400 block py-1">Spot</Link></li>
+              <li><Link href="/trade/futures" className="hover:text-blue-400 block py-1">Futures</Link></li>
               <li><Link href="/launchpad" className="hover:text-blue-400 block py-1">Launchpad</Link></li>
               <li><Link href="/card" className="hover:text-blue-400 block py-1">Lexance Card</Link></li>
             </ul>

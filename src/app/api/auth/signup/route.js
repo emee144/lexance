@@ -1,202 +1,176 @@
+import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Wallet from "@/models/Wallet";
 import DepositAddress from "@/models/DepositAddress";
-import { generateMnemonic, mnemonicToSeedSync } from "@scure/bip39";
-import { wordlist as english } from "@scure/bip39/wordlists/english.js";
+
+import { mnemonicToSeedSync } from "@scure/bip39";
 import { HDKey } from "@scure/bip32";
+
 import { ethers } from "ethers";
-import crypto from "crypto";
+
 import * as bitcoin from "bitcoinjs-lib";
 import { ECPairFactory } from "ecpair";
-import * as ECC from "tiny-secp256k1";
-import { Keypair as SolanaKeypair } from "@solana/web3.js";
+import * as ecc from "tiny-secp256k1";
+
+import { TronWeb } from "tronweb";
+
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-const ECPair = ECPairFactory(ECC);
+// ===============================
+// BITCOIN SETUP
+// ===============================
+const ECPair = ECPairFactory(ecc);
 const btcNetwork = bitcoin.networks.bitcoin;
 
-async function getTronWeb() {
-  const { default: TronWebLib } = await import("tronweb");
-  return new TronWebLib.TronWeb({ fullHost: "https://api.trongrid.io" });
+// ===============================
+// MASTER SEED (EXCHANGE LEVEL)
+// ===============================
+const MASTER_MNEMONIC = process.env.MASTER_MNEMONIC;
+if (!MASTER_MNEMONIC) throw new Error("MASTER_MNEMONIC environment variable is required");
+
+const masterSeed = mnemonicToSeedSync(MASTER_MNEMONIC);
+const masterNode = HDKey.fromMasterSeed(masterSeed);
+
+// ===============================
+// TRONWEB INSTANCE
+// ===============================
+function getTronWeb() {
+  return new TronWeb({ fullHost: "https://api.trongrid.io" });
 }
 
-function getDeterministicIndex(userId) {
-  const hash = crypto.createHash("sha256").update(userId.toString()).digest("hex");
-  return parseInt(hash.slice(0, 8), 16) & 0x7fffffff;
-}
-
+// ===============================
+// SIGNUP HANDLER
+// ===============================
 export async function POST(req) {
   await connectDB();
 
   const { email, password } = await req.json();
 
-  if (!email || !password) {
-    return new Response(
-      JSON.stringify({ error: "Email and password are required" }),
-      { status: 400 }
-    );
-  }
+  // ===============================
+  // VALIDATION
+  // ===============================
+  if (!email || !password) return NextResponse.json({ error: "Email and password required" }, { status: 400 });
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return new Response(
-      JSON.stringify({ error: "Invalid email format" }),
-      { status: 400 }
-    );
-  }
+  if (!emailRegex.test(email)) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
 
-  const passwordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]).{8,}$/;
-  if (!passwordRegex.test(password)) {
-    return new Response(
-      JSON.stringify({
-        error:
-          "Password must be 8+ chars with uppercase, lowercase, number, and special char",
-      }),
-      { status: 400 }
-    );
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET not set");
-  }
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
+  if (!passwordRegex.test(password)) return NextResponse.json({ error: "Password must be 8+ chars, include upper, lower, number & symbol" }, { status: 400 });
 
   try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return new Response(
-        JSON.stringify({ error: "User already exists" }),
-        { status: 400 }
-      );
-    }
+    const existingUser = await User.findOne({ email }).lean();
+    if (existingUser) return NextResponse.json({ error: "Email already registered" }, { status: 400 });
 
-    // === START TRANSACTION ===
     const mongoose = await import("mongoose");
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-   
-      const [user] = await User.create([{ email, password }], { session });
+      // ===============================
+      // GET NEXT WALLET INDEX
+      // ===============================
+      const lastUser = await User.findOne({}, {}, { sort: { walletIndex: -1 } }).lean();
+      const nextWalletIndex = lastUser ? lastUser.walletIndex + 1 : 0;
 
-      await Wallet.create({ user: user._id });
+      // ===============================
+      // CREATE USER + WALLET
+      // ===============================
+      const [user] = await User.create([{ email, password, walletIndex: nextWalletIndex }], { session });
+      await Wallet.create([{ user: user._id }], { session });
 
+      const userIndex = user.walletIndex;
+      const tronWeb = getTronWeb();
 
-      const mnemonic = generateMnemonic(english, 256);
-      const seed = mnemonicToSeedSync(mnemonic);
-      const master = HDKey.fromMasterSeed(seed);
-      const index = getDeterministicIndex(user._id);
-      const tronWeb = await getTronWeb();
+      // ===============================
+      // ETH / ERC20
+      // ===============================
+      const ethNode = masterNode.derive(`m/44'/60'/0'/0/${userIndex}`);
+      const ethPrivKey = "0x" + Buffer.from(ethNode.privateKey).toString("hex");
+      const ethAddress = new ethers.Wallet(ethPrivKey).address;
 
-      const ethNode = master.derive(`m/44'/60'/0'/0/${index}`);
-      const ethAddress = new ethers.Wallet(
-        ethers.hexlify(ethNode.privateKey)
-      ).address;
+      // ===============================
+      // TRON / TRC20
+      // ===============================
+      const trxNode = masterNode.derive(`m/44'/195'/0'/0/${userIndex}`);
+      const trxPrivKey = Buffer.from(trxNode.privateKey).toString("hex");
+      const trxAddress = tronWeb.address.fromPrivateKey(trxPrivKey);
 
-      const tronNode = master.derive(`m/44'/195'/0'/0/${index}`);
-      const tronPrivHex = Buffer.from(tronNode.privateKey).toString("hex");
-      const trxAddress = tronWeb.address.fromPrivateKey(tronPrivHex);
+      // ===============================
+      // BITCOIN LEGACY (P2PKH)
+      // ===============================
+      const btcLegacyNode = masterNode.derive(`m/44'/0'/0'/0/${userIndex}`);
+      const btcLegacyKey = ECPair.fromPrivateKey(Buffer.from(btcLegacyNode.privateKey));
+      const btcLegacy = bitcoin.payments.p2pkh({ pubkey: btcLegacyKey.publicKey, network: btcNetwork }).address;
 
-      // BTC Legacy
-      const btcNode = master.derive(`m/44'/0'/0'/0/${index}`);
-      const btcLegacy = bitcoin.payments.p2pkh({
-        pubkey: ECPair.fromPrivateKey(
-          Buffer.from(btcNode.privateKey)
-        ).publicKey,
-        network: btcNetwork,
-      }).address;
+      // ===============================
+      // BITCOIN BECH32 (P2WPKH)
+      // ===============================
+      const btcBech32Node = masterNode.derive(`m/84'/0'/0'/0/${userIndex}`);
+      const btcBech32Key = ECPair.fromPrivateKey(Buffer.from(btcBech32Node.privateKey));
+      const btcBech32 = bitcoin.payments.p2wpkh({ pubkey: btcBech32Key.publicKey, network: btcNetwork }).address;
 
-      // BTC Bech32
-      const btcBech32Node = master.derive(`m/84'/0'/0'/0/${index}`);
-      const btcBech32 = bitcoin.payments.p2wpkh({
-        pubkey: ECPair.fromPrivateKey(
-          Buffer.from(btcBech32Node.privateKey)
-        ).publicKey,
-        network: btcNetwork,
-      }).address;
+      // ===============================
+      // BNB (BEP20)
+      // ===============================
+      const bnbNode = masterNode.derive(`m/44'/714'/0'/0/${userIndex}`);
+      const bnbPrivKey = "0x" + Buffer.from(bnbNode.privateKey).toString("hex");
+      const bnbAddress = new ethers.Wallet(bnbPrivKey).address;
 
-      // SOL
-      const solNode = master.derive(`m/44'/501'/0'/0/${index}`);
-      const solKeypair = SolanaKeypair.fromSeed(
-        solNode.privateKey.slice(0, 32)
-      );
+      // ===============================
+      // SOLANA
+      // ===============================
+      const solNode = masterNode.derive(`m/44'/501'/${userIndex}'/0'`);
+      const { Keypair } = await import("@solana/web3.js");
+      const solKeypair = Keypair.fromSeed(solNode.privateKey.slice(0, 32));
       const solAddress = solKeypair.publicKey.toBase58();
 
-      // BNB
-      const bnbNode = master.derive(`m/44'/714'/0'/0/${index}`);
-      const bnbWallet = new ethers.Wallet(
-        ethers.hexlify(bnbNode.privateKey)
-      );
-      const bnbAddress = bnbWallet.address;
+      const addresses = [
+        { coin: "ETH", network: "ERC20", address: ethAddress },
+        { coin: "USDT", network: "ERC20", address: ethAddress },
+
+        { coin: "TRX", network: "TRC20", address: trxAddress },
+        { coin: "USDT", network: "TRC20", address: trxAddress },
+
+        { coin: "BTC", network: "BTC", address: btcLegacy },
+        { coin: "BTC", network: "BTC-BECH32", address: btcBech32 },
+
+        { coin: "BNB", network: "BEP20", address: bnbAddress },
+
+        { coin: "SOL", network: "SOL", address: solAddress },
+      ];
 
       await DepositAddress.insertMany(
-        [
-          { user: user._id, coin: "ETH", network: "ERC20", address: ethAddress, isActive: true },
-          { user: user._id, coin: "TRX", network: "TRC20", address: trxAddress, isActive: true },
-          { user: user._id, coin: "BTC", network: "BTC", address: btcLegacy, isActive: true },
-          { user: user._id, coin: "BTC", network: "BTC-BECH32", address: btcBech32, isActive: true },
-          { user: user._id, coin: "USDT", network: "ERC20", address: ethAddress, isActive: true },
-          { user: user._id, coin: "USDT", network: "TRC20", address: trxAddress, isActive: true },
-          { user: user._id, coin: "SOL", network: "SOL", address: solAddress, isActive: true },
-          { user: user._id, coin: "BNB", network: "BEP20", address: bnbAddress, isActive: true },
-        ],
+        addresses.map(a => ({ user: user._id, ...a, isActive: true })),
         { session }
       );
 
       await session.commitTransaction();
-      session.endSession();
 
-      const token = jwt.sign(
-        { id: user._id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-
+      // ===============================
+      // JWT SESSION
+      // ===============================
+      const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });
       const cookieStore = await cookies();
-      cookieStore.set({
-        name: "access_token",
-        value: token,
+      cookieStore.set("access_token", token, {
         httpOnly: true,
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60,
-        sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
       });
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Account created successfully!",
-          mnemonic,
-          warning:
-            "Save this recovery phrase NOW — it will NEVER be shown again!",
-        }),
-        {
-          status: 201,
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-store",
-          },
-        }
-      );
+      return NextResponse.json({ success: true, message: "Account created successfully" }, { status: 201 });
 
     } catch (err) {
-      if (session.inTransaction()) await session.abortTransaction();
+      await session.abortTransaction();
+      throw err;
+    } finally {
       session.endSession();
-      console.error("Signup transaction error:", err);
-      return new Response(
-        JSON.stringify({ error: "Server error during signup" }),
-        { status: 500 }
-      );
     }
-
   } catch (err) {
     console.error("Signup error:", err);
-    return new Response(
-      JSON.stringify({ error: "Server error" }),
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    walletIndex: {
+      type: Number,
+      required: true,
+      unique: true, 
+    },
   },
   { timestamps: true }
 );

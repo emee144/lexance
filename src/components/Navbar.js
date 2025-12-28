@@ -21,7 +21,7 @@ export default function Navbar() {
                 <Link href="/trade/spot">Spot</Link>
               </li>
               <li className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Link href="/trade/derivatives">Derivatives</Link>
+                <Link href="/trade/futures">Futures</Link>
               </li>
               <li className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <Link href="/trade/spread-trading">Spread Trading</Link>
@@ -48,9 +48,6 @@ export default function Navbar() {
               </li>
             </ul>
           </li>
-
-          {/* Web3 */}
-          <li><Link href="/web3">Web3</Link></li>
 
           {/* Help */}
           <li><Link href="/help">Help</Link></li>

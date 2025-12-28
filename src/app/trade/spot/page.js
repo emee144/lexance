@@ -346,7 +346,7 @@ useEffect(() => {
                   onClick={() => router.push('/login')}
                   className="mt-auto w-full rounded-lg bg-blue-600 py-3 font-bold hover:bg-blue-700"
                 >
-                  Login to Trade
+                  Login 
                 </button>
               )}
             </div>
