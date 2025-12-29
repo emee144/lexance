@@ -88,7 +88,6 @@ export default function FundingPage() {
     fetchDepositAddresses();
   }, [isLoggedIn, router]);
 
-  // Auto-set default networks on coin change
   useEffect(() => {
     const networks = SUPPORTED_NETWORKS[selectedCoin] || [];
     setDepositNetwork(networks[0] || '');
@@ -194,13 +193,11 @@ export default function FundingPage() {
           </button>
         </div>
 
-        {/* Deposit Tab */}
         {activeTab === 'deposit' && (
           <div className="grid lg:grid-cols-2 gap-10">
             <div className="bg-[#1a1a1a] rounded-2xl p-8 shadow-2xl">
               <h2 className="text-3xl font-bold mb-8">Deposit</h2>
 
-              {/* Select Coin */}
               <div className="mb-6">
                 <label className="block text-sm text-gray-400 mb-3">Select Coin</label>
                 <select
@@ -214,7 +211,6 @@ export default function FundingPage() {
                 </select>
               </div>
 
-              {/* Select Network if multiple */}
               {SUPPORTED_NETWORKS[selectedCoin]?.length > 1 && (
                 <div className="mb-6">
                   <label className="block text-sm text-gray-400 mb-3">Select Network</label>

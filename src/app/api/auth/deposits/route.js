@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/mongodb";
 import CryptoDeposit from "@/models/CryptoDeposit";
 import DepositAddress from "@/models/DepositAddress"; 
+import { cookies } from "next/headers";
 
 export async function GET(req) {
   try {
@@ -20,13 +20,9 @@ export async function GET(req) {
     } catch (err) {
       return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
     }
-
-    // Step 1: Get all deposits
     const deposits = await CryptoDeposit.find({ user: decoded.id })
       .sort({ createdAt: -1 })
       .lean();
-
-    // Step 2: Find the user's USDT-TRC20 deposit address (you probably have only one per user/network)
     const addressDoc = await DepositAddress.findOne({
       user: decoded.id,
       coin: "USDT",
@@ -35,10 +31,9 @@ export async function GET(req) {
 
     const userTrc20Address = addressDoc?.address || "—";
 
-    // Step 3: Attach the address to every deposit (for this coin/network)
     const depositsWithAddress = deposits.map(deposit => ({
       ...deposit,
-      // Only show the real address for USDT-TRC20 deposits
+     
       address: (deposit.coin === "USDT" && deposit.network === "TRC20") 
         ? userTrc20Address 
         : deposit.address || "—"

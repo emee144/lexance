@@ -9,8 +9,6 @@ import DepositDrawerContent from "@/components/DepositDrawerContent";
 import DepositCryptoPage from "@/app/deposit/crypto/page";
 import WithdrawForm from "@/components/WithdrawForm";
 import AnimatedCard from "@/components/AnimatedCard";
-import WithdrawalHistory from "@/components/WithdrawalHistory";
-
 
 export default function Dashboard() {
   const [assets, setAssets] = useState([]);
@@ -336,52 +334,43 @@ const orders = [
             <div>
               <h4 className="text-orange-500 font-semibold mb-3">About</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-400">About Lexance</a></li>
-                <li><a href="#" className="hover:text-blue-400">Meet Team</a></li>
-                <li><a href="#" className="hover:text-blue-400">Media</a></li>
-                <li><a href="#" className="hover:text-blue-400">Community</a></li>
-                <li><a href="#" className="hover:text-blue-400">Careers</a></li>
-                <li><a href="#" className="hover:text-blue-400">Security</a></li>
-                <li><a href="#" className="hover:text-blue-400">Announcements</a></li>
+                <li><Link href="/about" className="hover:text-blue-400">About Lexance</Link></li>
+                <li><Link href="/media" className="hover:text-blue-400">Media</Link></li>
+                <li><Link href="/careers" className="hover:text-blue-400">Careers</Link></li>
+                <li><Link href="/security" className="hover:text-blue-400">Security</Link></li>
+
               </ul>
             </div>
             <div>
               <h4 className="text-orange-500 font-semibold mb-3">Services</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-400">Buy Crypto</a></li>
-                <li><a href="#" className="hover:text-blue-400">Earn</a></li>
-                <li><a href="#" className="hover:text-blue-400">P2P Trading</a></li>
-                <li><a href="#" className="hover:text-blue-400">Wallet</a></li>
-                <li><a href="#" className="hover:text-blue-400">API</a></li>
-                <li><a href="#" className="hover:text-blue-400">OTC Desk</a></li>
+                <li><Link href="/deposit/crypto" className="hover:text-blue-400">Buy Crypto</Link></li>
+                <li><Link href="/dashboard/earn" className="hover:text-blue-400">Earn</Link></li>
+                <li><Link href="/p2p" className="hover:text-blue-400">P2P Trading</Link></li>
+                <li><Link href="/wallet" className="hover:text-blue-400">Wallet</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-orange-500 font-semibold mb-3">Support</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-400">Submit Request</a></li>
-                <li><a href="#" className="hover:text-blue-400">Help Center</a></li>
-                <li><a href="#" className="hover:text-blue-400">Fees</a></li>
-                <li><a href="#" className="hover:text-blue-400">Verification</a></li>
-                <li><a href="#" className="hover:text-blue-400">System Status</a></li>
-                <li><a href="#" className="hover:text-blue-400">Contact Us</a></li>
+                <li><Link href="/request" className="hover:text-blue-400">Submit Request</Link></li>
+                <li><Link href="/help" className="hover:text-blue-400">Help Center</Link></li>
+                <li><Link href="/verification" className="hover:text-blue-400">Verification</Link></li>
+                <li><Link href="/contact" className="hover:text-blue-400">Contact Us</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-orange-500 font-semibold mb-3">Products</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-400">Trade</a></li>
-                <li><a href="#" className="hover:text-blue-400">Spot</a></li>
-                <li><a href="#" className="hover:text-blue-400">Derivatives</a></li>
-                <li><a href="#" className="hover:text-blue-400">Launchpad</a></li>
-                <li><a href="#" className="hover:text-blue-400">Lexance Card</a></li>
+                <li><Link href="/trade/spot" className="hover:text-blue-400">Spot</Link></li>
+                <li><Link href="/trade/futures" className="hover:text-blue-400">Futures</Link></li>
+                <li><Link href="/launchpad" className="hover:text-blue-400">Launchpad</Link></li>
               </ul>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* ==================== DEPOSIT DRAWER ==================== */}
 {isDepositOpen && (
   <>
     {/* Backdrop */}

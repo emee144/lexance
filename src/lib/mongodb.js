@@ -4,7 +4,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   throw new Error(
     "Please define MONGODB_URI in your .env.local file.\n" +
-      "Example: mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/your-db-name?retryWrites=true&w=majority"
+      "Example: mongodb+srv://<username>:<password>@<cluster-url>/<db-name>"
   );
 }
 let cached = global.mongoose;

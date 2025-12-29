@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import DepositAddress from "@/models/DepositAddress";
 import { connectDB } from "@/lib/mongodb";
 import jwt from "jsonwebtoken";
-
 const JWT_SECRET = process.env.JWT_SECRET;
-
-
 function getUserFromCookie(request) {
   const cookieHeader = request.headers.get("cookie");
   if (!cookieHeader) return null;
