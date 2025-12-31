@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-
 export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -103,7 +102,6 @@ export default function HelpPage() {
     },
   ];
 
-  // Filter based on search and category
   const filteredFaqs = faqs.filter((cat) => {
     if (activeCategory !== 'all' && cat.category !== activeCategory) return false;
     if (!searchQuery) return true;
@@ -166,7 +164,6 @@ export default function HelpPage() {
         </div>
       </div>
 
-      {/* FAQ Content */}
       <div className="mx-auto max-w-5xl py-12 px-6">
         {filteredFaqs.length === 0 ? (
           <p className="text-center text-gray-400 text-xl py-20">
@@ -192,7 +189,6 @@ export default function HelpPage() {
           ))
         )}
 
-        {/* Contact CTA */}
         <div className="text-center mt-20 py-16 bg-gradient-to-r from-gray-900 to-gray-1000 rounded-3xl">
           <h2 className="text-4xl font-bold mb-6">Still need help?</h2>
           <p className="text-xl text-gray-300 mb-10">

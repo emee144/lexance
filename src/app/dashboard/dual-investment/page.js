@@ -46,7 +46,6 @@ export default function DualInvestmentPage() {
         <p className="text-xl md:text-2xl text-gray-300">Earn Up to 312% APR by Predicting BTC & ETH Direction</p>
       </div>
 
-      {/* Product Selector */}
       <div className="max-w-6xl mx-auto px-6 py-12">
         <h2 className="text-3xl font-bold text-center mb-10">Available Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -75,7 +74,6 @@ export default function DualInvestmentPage() {
           ))}
         </div>
 
-        {/* Investment Calculator */}
         <div className="bg-gray-900 rounded-3xl p-8 max-w-3xl mx-auto">
           <h3 className="text-2xl font-bold mb-6">
             {selectedProduct.pair} • {selectedProduct.type}

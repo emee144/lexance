@@ -14,14 +14,12 @@ export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onB
   const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
 
-  // Read coin from URL if provided
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const coinFromUrl = urlParams.get("coin")?.toUpperCase();
     if (coinFromUrl) setSelectedCoin(coinFromUrl);
   }, []);
 
-  // Fetch addresses
   useEffect(() => {
     async function fetchAddresses() {
       setLoading(true);
@@ -70,7 +68,6 @@ export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onB
     if (selectedCoin) fetchAddresses();
   }, [selectedCoin]);
 
-  // Fetch deposit history
   useEffect(() => {
     async function fetchHistory() {
       try {
@@ -119,7 +116,6 @@ export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onB
       {loading && <p className="text-center text-gray-400">Loading addresses...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
-      {/* Network selection */}
       {networks.length > 0 && (
         <div className="flex justify-center gap-3 flex-wrap mb-4">
           {networks.map((n) => (
@@ -138,7 +134,6 @@ export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onB
         </div>
       )}
 
-      {/* Warning */}
       {selectedNetwork && (
         <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-2xl p-6">
           <p className="text-sm text-yellow-800 dark:text-yellow-300 leading-relaxed">
@@ -148,7 +143,6 @@ export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onB
         </div>
       )}
 
-      {/* QR + Address */}
       {address && (
         <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-8 text-center">
           <div className="flex justify-center items-center mb-6">

@@ -83,8 +83,6 @@ export default function LoginPage() {
             Sign Up
           </a>
         </p>
-
-        {/* Login Form */}
         {!isForgotPassword ? (
           <form onSubmit={handleLogin}>
             {message && (

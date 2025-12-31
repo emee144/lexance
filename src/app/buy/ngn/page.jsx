@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 
-// Mock live P2P offers (replace with your API later)
 const mockOffers = [
   { id: 1, user: "ProTrader99", rating: 99.8, orders: 2850, price: 1620, available: 250000, payment: ["Bank Transfer", "Opay"], time: "15 min" },
   { id: 2, user: "QueenCrypto", rating: 100, orders: 5200, price: 1618, available: 500000, payment: ["Bank Transfer"], time: "10 min" },

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-
 const TradingChart = dynamic(() => import('@/components/TradingChart'), {
   ssr: false,
   loading: () => (
@@ -90,7 +89,7 @@ useEffect(() => {
 
 
   useEffect(() => {
-  // Depth (Order Book)
+
   const depthWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@depth20@100ms');
   depthWs.onmessage = (e) => {
     const d = JSON.parse(e.data);
@@ -197,17 +196,15 @@ useEffect(() => {
         </div>
       </header>
 
-      {/* Trading Area - 70vh */}
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="h-[70vh] w-full max-w-7xl grid grid-cols-1 gap-4 lg:grid-cols-12">
-          {/* Chart */}
+         
           <div className="lg:col-span-7">
             <div className="h-full overflow-hidden rounded-xl border border-gray-700 bg-[#0b0e11] shadow-2xl">
               <TradingChart timeframe={timeframe} />
             </div>
           </div>
 
-          {/* Order Book / Recent Trades */}
           <div className="lg:col-span-3">
             <div className="h-full rounded-xl bg-[#1a1a1a] flex flex-col shadow-2xl">
               <div className="flex border-b border-gray-700">
@@ -228,7 +225,6 @@ useEffect(() => {
              <div className="flex-1 overflow-y-auto p-4 text-sm">
   {viewMode === 'orderbook' && (
     <>
-      {/* Asks */}
       <div className="mb-2">
         {asks.slice().reverse().map(([price, qty], i) => (
           <div key={i} className="flex justify-between text-red-400">
@@ -237,15 +233,12 @@ useEffect(() => {
           </div>
         ))}
       </div>
-
-      {/* Mid price */}
       {currentPrice && (
         <div className="my-2 text-center text-base font-bold text-yellow-400">
           {currentPrice.toFixed(2)}
         </div>
       )}
 
-      {/* Bids */}
       <div>
         {bids.map(([price, qty], i) => (
           <div key={i} className="flex justify-between text-green-400">

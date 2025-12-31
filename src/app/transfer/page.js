@@ -35,7 +35,6 @@ export default function TransferPage() {
     fetchBalances();
   }, []);
 
-  // Handle transfer
   const handleTransfer = async () => {
     const amt = parseFloat(amount);
     if (!amount || isNaN(amt) || amt <= 0) {

@@ -94,7 +94,6 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* Open Positions */}
       <section id="positions" className="py-20 px-6 bg-gray-950">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl font-bold text-center mb-16 bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-500">
@@ -119,7 +118,6 @@ export default function CareersPage() {
             })}
           </div>
 
-          {/* Open Application */}
           <div className="text-center mt-12">
             <p className="text-gray-400 mb-6">Don’t see your role? We’re always hiring exceptional talent.</p>
             <a
@@ -132,7 +130,6 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* Departments */}
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl font-bold text-center mb-16 bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-500">
@@ -152,7 +149,6 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
       <section className="py-20 px-6 text-center bg-linear-to-t from-cyan-900/20">
         <h2 className="text-4xl font-bold mb-8 bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-500">
           Ready to Build the Future of DeFi?

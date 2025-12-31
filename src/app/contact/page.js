@@ -51,7 +51,7 @@ export default function ContactPage() {
           </p>
         </div>
 
-        {/* Support Options */}
+       
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           <div className="bg-[#1a1a1a] rounded-2xl p-8 text-center shadow-xl">
             <div className="text-5xl mb-4">📧</div>
@@ -159,7 +159,6 @@ export default function ContactPage() {
           </form>
         </div>
 
-        {/* Bottom Note */}
         <p className="text-center text-gray-500 mt-12">
           Urgent issue? Include your User ID and transaction hash for faster help.
         </p>

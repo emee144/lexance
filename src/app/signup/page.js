@@ -35,7 +35,7 @@ try {
       
       router.push("/dashboard");
     } else {
-      // Failed signup
+      
       setMessage(data.error || "Something went wrong.");
     }
   } catch (err) {

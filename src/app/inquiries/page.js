@@ -28,7 +28,6 @@ export default function InquiriesPage() {
   return (
     <div className="font-lexend min-h-screen bg-gray-900 py-16 text-gray-200">
       <div className="max-w-5xl mx-auto px-6">
-        {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-white mb-4">Inquiries</h1>
           <p className="text-lg text-gray-400">
@@ -36,7 +35,6 @@ export default function InquiriesPage() {
           </p>
         </div>
 
-        {/* Inquiry Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {inquiries.map((item, idx) => (
             <div
@@ -54,8 +52,6 @@ export default function InquiriesPage() {
             </div>
           ))}
         </div>
-
-        {/* Footer Note */}
         <div className="mt-16 text-center text-sm text-gray-500">
           <p>All emails currently route to our core team — we'll reply within 24 hours.</p>
         </div>

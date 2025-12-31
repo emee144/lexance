@@ -1,6 +1,7 @@
-"use client";
-import { useEffect, useState } from "react";
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState([]);
@@ -35,15 +36,14 @@ export default function AssetsPage() {
       if (!res.ok) throw new Error("Failed to load assets");
 
       const data = await res.json();
+      const assetsObj = data.assets || {}; 
 
-      // This API now returns from Wallet → clean format
-      const updatedAssets = data.map(asset => ({
-        symbol: asset.symbol,
-        balance: Number(asset.balance ?? 0),
-        value: Number(asset.value ?? 0),
-        change: Number(asset.change ?? 0),
-        name: asset.name || asset.symbol,
-      }));
+      const updatedAssets = Object.entries(assetsObj).map(([symbol, balance]) => ({
+        symbol,
+        balance: Number(balance ?? 0),
+        value: Number(balance ?? 0), 
+        change: 0, 
+      })).sort((a, b) => b.value - a.value); // Sort by value descending
 
       setAssets(updatedAssets);
     } catch (err) {
@@ -116,12 +116,12 @@ export default function AssetsPage() {
                 >
                   <div className="flex items-center gap-4 mb-4">
                     <Image
-                      src={coinIcons[asset.symbol] || "/usdt.png"} // Fallback to USDT icon
+                      src={coinIcons[asset.symbol] || "/usdt.png"}
                       alt={asset.symbol}
                       width={48}
                       height={48}
                       className="rounded-full"
-                      unoptimized // Important for dynamic paths
+                      unoptimized
                     />
                     <div>
                       <p className="font-bold text-lg">{asset.symbol}</p>

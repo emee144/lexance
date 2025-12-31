@@ -6,7 +6,7 @@ export default function EarnPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero */}
+   
       <div className="bg-linear-to-r from-blue-900 via-purple-900 to-black py-20 text-center">
         <h1 className="text-5xl md:text-7xl font-bold mb-4">Lexance Earn</h1>
         <p className="text-xl md:text-2xl text-gray-300">
@@ -14,7 +14,7 @@ export default function EarnPage() {
         </p>
       </div>
 
-      {/* Live Stats */}
+
       <div className="bg-gray-950 py-12 border-b border-gray-800">
         <div className="max-w-4xl mx-auto grid grid-cols-2 text-center">
           <div>
@@ -28,7 +28,6 @@ export default function EarnPage() {
         </div>
       </div>
 
-      {/* Promo Slider */}
       <div className="py-12 bg-black overflow-hidden">
         <div className="animate-slide flex">
           {promos.concat(promos).map((p, i) => (
@@ -41,7 +40,6 @@ export default function EarnPage() {
         </div>
       </div>
 
-      {/* Product Cards */}
       <div className="max-w-7xl mx-auto px-6 py-16">
         <h2 className="text-4xl font-bold text-center mb-12">Explore Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -59,7 +57,6 @@ export default function EarnPage() {
         </div>
       </div>
 
-      {/* Asset Table */}
       <div className="max-w-6xl mx-auto px-6 pb-24">
         <h2 className="text-4xl font-bold text-center mb-12">Available Assets</h2>
         <div className="bg-gray-900 rounded-xl overflow-hidden">
@@ -90,7 +87,6 @@ export default function EarnPage() {
         </div>
       </div>
 
-      {/* Infinite slider animation */}
       <style jsx>{`
         @keyframes slide {
           0% { transform: translateX(0); }

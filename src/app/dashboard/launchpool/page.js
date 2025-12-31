@@ -19,7 +19,7 @@ export default function LaunchpoolPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
+     
       <div className="bg-linear-to-b from-purple-900 via-blue-900 to-black py-20">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
@@ -36,7 +36,6 @@ export default function LaunchpoolPage() {
         </div>
       </div>
 
-      {/* Token Card */}
       <div className="max-w-4xl mx-auto px-6 -mt-12 relative z-10">
         <div className="bg-linear-to-r from-purple-600 to-blue-600 rounded-3xl p-10 text-center shadow-2xl">
           <div className="bg-gray-900 rounded-full w-32 h-32 mx-auto mb-6 flex items-center justify-center border-4 border-yellow-400">
@@ -51,7 +50,6 @@ export default function LaunchpoolPage() {
         </div>
       </div>
 
-      {/* Staking Pools */}
       <div className="max-w-7xl mx-auto px-6 py-20">
         <h2 className="text-4xl font-bold text-center mb-12">Choose Your Staking Pool</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -87,7 +85,6 @@ export default function LaunchpoolPage() {
         </div>
       </div>
 
-      {/* Footer Info */}
       <div className="bg-gray-950 py-16 text-center">
         <p className="text-gray-400 max-w-4xl mx-auto px-6">
           Rewards are distributed daily. You can unstake anytime after the event ends. 

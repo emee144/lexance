@@ -42,7 +42,6 @@ const fetchAssets = async () => {
     const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`);
     const priceData = await priceRes.json();
 
-    // Calculate values
     const updatedAssets = data.map(a => {
       const id = coinMap[a.symbol.toLowerCase()];
       const priceUSD = priceData[id]?.usd ?? 0;
@@ -112,7 +111,6 @@ const orders = [
     <div className="font-sans bg-gray-50 dark:bg-black min-h-screen flex flex-col">
       <DashboardNavbar />
 
-      {/* Hero Section */}
       <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-8 py-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
           <div className="text-center md:text-left mb-6 md:mb-0">
@@ -124,7 +122,6 @@ const orders = [
             </p>
           </div>
 
-          {/* Total Balance Card */}
           <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 text-center shadow-lg">
             <div className="text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wider font-medium mb-2">
               Total Portfolio Value
@@ -141,18 +138,17 @@ const orders = [
         <div className="max-w-7xl mx-auto text-center mt-8">
           <button
             onClick={() => openDeposit("main")}
-            className="px-10 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition"
+            className="px-10 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition cursor-pointer"
           >
             Deposit Now
           </button>
         </div>
       </section>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto p-8 gap-8">
-        {/* Sidebar */}
+  
         <div className="w-full lg:w-1/3 space-y-6">
-          {/* Assets */}
+       
           <section className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-800">
             <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Your Assets</h2>
             {assets.length === 0 ? (
@@ -201,15 +197,13 @@ const orders = [
   </button>
 </Link>
           </section>
-
-          {/* Quick Actions */}
           <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => openDeposit("main")} className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <button onClick={() => openDeposit("main")} className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
                 Deposit
               </button>
-              <button onClick={() => openWithdraw()} className="px-4 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950">
+              <button onClick={() => openWithdraw()} className="px-4 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950 cursor-pointer">
                 Withdraw
               </button>
               <Link href="/deposit/crypto">
@@ -221,7 +215,6 @@ const orders = [
             </div>
           </section>
 
-          {/* Recent Orders */}
           <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center justify-between">
               Recent Orders
@@ -247,12 +240,10 @@ const orders = [
             </div>
           </section>
         </div>
-
-        {/* Main Panel */}
+      
         <div className="w-full lg:w-2/3 space-y-6">
           <AnimatedCard />
 
-          {/* Spot Table */}
           <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden">
             <h2 className="text-xl font-bold p-6 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-800">
               Spot X
@@ -292,7 +283,6 @@ const orders = [
         </div>
       </div>
 
-     {/* Top Savings & Staking - Fixed */}
 <div className="w-full px-4 md:px-8 lg:px-0 mt-12">
   <div className="max-w-7xl mx-auto">
     <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
@@ -301,8 +291,6 @@ const orders = [
     <CryptoSavingsCarousel />
   </div>
 </div>
-
-      {/* ========== YOUR ORIGINAL LEXANCE FOOTER ========== */}
       <footer className="bg-[#0f0f12] text-gray-300 py-16 mt-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-3 gap-10 border-b border-gray-700 pb-10">
@@ -336,7 +324,6 @@ const orders = [
               <ul className="space-y-2">
                 <li><Link href="/about" className="hover:text-blue-400">About Lexance</Link></li>
                 <li><Link href="/media" className="hover:text-blue-400">Media</Link></li>
-                <li><Link href="/careers" className="hover:text-blue-400">Careers</Link></li>
                 <li><Link href="/security" className="hover:text-blue-400">Security</Link></li>
 
               </ul>
@@ -346,14 +333,12 @@ const orders = [
               <ul className="space-y-2">
                 <li><Link href="/deposit/crypto" className="hover:text-blue-400">Buy Crypto</Link></li>
                 <li><Link href="/dashboard/earn" className="hover:text-blue-400">Earn</Link></li>
-                <li><Link href="/p2p" className="hover:text-blue-400">P2P Trading</Link></li>
                 <li><Link href="/wallet" className="hover:text-blue-400">Wallet</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-orange-500 font-semibold mb-3">Support</h4>
               <ul className="space-y-2">
-                <li><Link href="/request" className="hover:text-blue-400">Submit Request</Link></li>
                 <li><Link href="/help" className="hover:text-blue-400">Help Center</Link></li>
                 <li><Link href="/verification" className="hover:text-blue-400">Verification</Link></li>
                 <li><Link href="/contact" className="hover:text-blue-400">Contact Us</Link></li>
@@ -373,13 +358,12 @@ const orders = [
 
 {isDepositOpen && (
   <>
-    {/* Backdrop */}
+   
     <div
       className="fixed inset-0 bg-black bg-opacity-50 z-40"
       onClick={() => setIsDepositOpen(false)}
     />
 
-    {/* Drawer */}
     <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col">
       {/* Header */}
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-6 flex items-center justify-between">
@@ -403,7 +387,6 @@ const orders = [
         </button>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {depositView === "main" ? (
           <DepositDrawerContent
@@ -423,18 +406,15 @@ const orders = [
   </>
 )}
 
-{/* ==================== WITHDRAW DRAWER ==================== */}
 {isWithdrawOpen && (
   <>
-    {/* Backdrop */}
     <div
       className="fixed inset-0 bg-black bg-opacity-50 z-40"
       onClick={() => setIsWithdrawOpen(false)}
     />
 
-    {/* Drawer */}
     <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col">
-      {/* Header */}
+
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Withdraw</h2>
         <button
@@ -446,8 +426,6 @@ const orders = [
           </svg>
         </button>
       </div>
-
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <WithdrawForm />
       </div>

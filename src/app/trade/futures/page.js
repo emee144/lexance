@@ -7,7 +7,6 @@ const TradingChart = dynamic(() => import('@/components/TradingChart'), {
   ssr: false,
   loading: () => <div className="h-full flex items-center justify-center bg-black text-gray-400">Loading chart...</div>,
 });
-
 export default function FuturesPage() {
   const [currentPrice, setCurrentPrice] = useState(null);
   const [prevPrice, setPrevPrice] = useState(null);
@@ -21,8 +20,6 @@ export default function FuturesPage() {
   const [bids, setBids] = useState([]);
   const [asks, setAsks] = useState([]);
   const [activeBottomTab, setActiveBottomTab] = useState('positions');
-
-  // Binance WebSocket: live price + depth
   useEffect(() => {
     const ws = new WebSocket('wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/btcusdt@depth20@100ms');
 
@@ -57,7 +54,6 @@ export default function FuturesPage() {
     setQuantity('');
   };
 
-  // Mock positions
   const positions = [
     { pair: 'BTCUSDT', size: '0.150', entry: '86,500.00', mark: '87,920.83', pnl: '+1,380.12', roe: '+10.64%' },
     { pair: 'ETHUSDT', size: '2.500', entry: '3,800.00', mark: '3,950.00', pnl: '+375.00', roe: '+3.95%' },
@@ -65,7 +61,7 @@ export default function FuturesPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Header */}
+      
       <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <h1 className="text-3xl font-bold">BTCUSDT Perpetual</h1>
@@ -89,33 +85,26 @@ export default function FuturesPage() {
         </div>
       </header>
 
-      {/* Main 3-Column Layout */}
       <div className="flex-1 flex flex-col lg:flex-row">
-        {/* 1. Chart - 60% */}
         <div className="w-full lg:w-3/5 border-r border-gray-800">
           <div className="h-full">
             <TradingChart timeframe="1h" />
           </div>
         </div>
-
-        {/* 2. Order Book - 20% */}
+        
         <div className="w-full lg:w-1/5 border-r border-gray-800 p-4 flex flex-col">
           <h3 className="text-lg font-bold mb-4">Order Book</h3>
           <div className="flex-1 overflow-y-auto text-sm space-y-1">
-            {/* Asks (red) */}
             {asks.slice().reverse().map(([p, q], i) => (
               <div key={i} className="flex justify-between text-red-400">
                 <span>{p.toFixed(2)}</span>
                 <span>{q.toFixed(4)}</span>
               </div>
             ))}
-
-            {/* Current Price */}
             <div className="text-center py-3 text-xl font-bold bg-gray-900 my-4 rounded">
               {currentPrice ? currentPrice.toFixed(2) : '-'}
             </div>
 
-            {/* Bids (green) */}
             {bids.map(([p, q], i) => (
               <div key={i} className="flex justify-between text-green-400">
                 <span>{p.toFixed(2)}</span>
@@ -125,7 +114,6 @@ export default function FuturesPage() {
           </div>
         </div>
 
-        {/* 3. Buy/Sell Panel - 20% */}
         <div className="w-full lg:w-1/5 p-6 bg-gray-950 flex flex-col">
           <div className="flex gap-2 mb-6">
             <button
@@ -142,7 +130,6 @@ export default function FuturesPage() {
             </button>
           </div>
 
-          {/* Leverage */}
           <div className="mb-6">
             <div className="flex justify-between text-sm mb-2">
               <span>Leverage</span>
@@ -189,7 +176,6 @@ export default function FuturesPage() {
         </div>
       </div>
 
-      {/* Bottom Tabs */}
       <div className="bg-gray-950 border-t border-gray-800">
         <div className="flex">
           <button
@@ -212,7 +198,6 @@ export default function FuturesPage() {
           </button>
         </div>
 
-        {/* Positions Tab Content */}
         {activeBottomTab === 'positions' && (
           <div className="p-4 max-h-64 overflow-y-auto text-sm">
             <table className="w-full">

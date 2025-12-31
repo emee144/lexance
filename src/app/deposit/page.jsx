@@ -16,7 +16,7 @@ export default function DepositLandingPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+    
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Deposit Cryptocurrency
@@ -26,7 +26,6 @@ export default function DepositLandingPage() {
           </p>
         </div>
 
-        {/* Search Bar */}
         <div className="mb-10 max-w-2xl mx-auto">
           <input
             type="text"
@@ -73,7 +72,6 @@ export default function DepositLandingPage() {
           </div>
         </div>
 
-        {/* All Coins */}
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
             All Supported Coins
@@ -101,7 +99,6 @@ export default function DepositLandingPage() {
           </div>
         </div>
 
-        {/* Info Banner */}
         <div className="mt-16 bg-blue-50 dark:bg-blue-950/30 rounded-3xl p-8 text-center">
           <h3 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-4">
             Zero Deposit Fees · Instant Crediting

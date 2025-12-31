@@ -42,7 +42,6 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li><Link href="/about" className="hover:text-blue-400 block py-1">About Lexance</Link></li>
               <li><Link href="/inquiries" className="hover:text-blue-400 block py-1">Inquiries</Link></li>
-              <li><Link href="/careers" className="hover:text-blue-400 block py-1">Careers</Link></li>
               <li><Link href="/security" className="hover:text-blue-400 block py-1">Security</Link></li>
             </ul>
           </div>
@@ -53,7 +52,6 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li><Link href="/login" className="hover:text-blue-400 block py-1">Buy Crypto</Link></li>
               <li><Link href="/earn" className="hover:text-blue-400 block py-1">Earn</Link></li>
-              <li><Link href="/p2p" className="hover:text-blue-400 block py-1">P2P Trading</Link></li>
               <li><Link href="/wallet" className="hover:text-blue-400 block py-1">Wallet</Link></li>
   
             </ul>
@@ -63,7 +61,7 @@ export default function Footer() {
           <div>
             <h4 className="text-orange-500 font-semibold mb-3">Support</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/support/request" className="hover:text-blue-400 block py-1">Submit Request</Link></li>
+            
               <li><Link href="/help" className="hover:text-blue-400 block py-1">Help Center</Link></li>
               <li><Link href="/verification" className="hover:text-blue-400 block py-1">Verification</Link></li>
               <li><Link href="/contact" className="hover:text-blue-400 block py-1">Contact Us</Link></li>
@@ -77,7 +75,6 @@ export default function Footer() {
               <li><Link href="/trade/spot" className="hover:text-blue-400 block py-1">Spot</Link></li>
               <li><Link href="/trade/futures" className="hover:text-blue-400 block py-1">Futures</Link></li>
               <li><Link href="/launchpad" className="hover:text-blue-400 block py-1">Launchpad</Link></li>
-              <li><Link href="/card" className="hover:text-blue-400 block py-1">Lexance Card</Link></li>
             </ul>
           </div>
         </div>

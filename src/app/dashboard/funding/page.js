@@ -29,7 +29,6 @@ export default function FundingPage() {
     ADA: ['ADA'],
   };
 
-  // Auth check
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -45,7 +44,6 @@ export default function FundingPage() {
     checkAuth();
   }, [router]);
 
-  // Fetch funding balance
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -66,7 +64,6 @@ export default function FundingPage() {
     return () => clearInterval(interval);
   }, [isLoggedIn]);
 
-  // Fetch deposit addresses
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -296,13 +293,11 @@ export default function FundingPage() {
           </div>
         )}
 
-        {/* Withdraw Tab */}
         {activeTab === 'withdraw' && (
           <div className="max-w-3xl mx-auto">
             <div className="bg-[#1a1a1a] rounded-2xl p-10 shadow-2xl">
               <h2 className="text-3xl font-bold mb-8">Withdraw</h2>
 
-              {/* Select Coin */}
               <div className="mb-8">
                 <label className="block text-sm text-gray-400 mb-3">Coin</label>
                 <select
@@ -316,7 +311,6 @@ export default function FundingPage() {
                 </select>
               </div>
 
-              {/* Funding Balance */}
               <div className="mb-8 bg-gray-900 rounded-xl p-6">
                 <p className="text-sm text-gray-400 mb-2">Funding Wallet Balance</p>
                 <p className="text-4xl font-bold text-green-400">
@@ -327,7 +321,6 @@ export default function FundingPage() {
                 </p>
               </div>
 
-              {/* Network */}
               <div className="mb-6">
                 <label className="block text-sm text-gray-400 mb-3">Network</label>
                 <select
@@ -342,8 +335,7 @@ export default function FundingPage() {
                   ))}
                 </select>
               </div>
-
-              {/* Address & Amount */}
+              
               <input
                 type="text"
                 placeholder="Withdrawal address"

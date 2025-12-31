@@ -1,10 +1,8 @@
 "use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
 export default function DashboardNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
@@ -18,7 +16,7 @@ const handleLogout = async () => {
 
   return (
     <>
-      {/* NAVBAR */}
+      
       <nav className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -44,7 +42,6 @@ const handleLogout = async () => {
                 Overview
               </Link>
 
-              {/* Assets Dropdown */}
               <div className="relative group">
                 <button className="text-gray-900 dark:text-white font-medium hover:text-blue-600 transition flex items-center gap-1">
                   Assets
@@ -59,12 +56,11 @@ const handleLogout = async () => {
                     <Link href="/withdraw" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">Withdraw</Link>
                     <Link href="/transfer" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">Transfer</Link>
                     <div className="border-t border-gray-200 dark:border-gray-800 my-2 mx-4"></div>
-                    <Link href="/dashboard/funding" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">Funding Account</Link>
+                    <Link href="/dashboard/funding" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">Funding</Link>
                   </div>
                 </div>
               </div>
 
-              {/* Invested Products Dropdown */}
               <div className="relative group">
                 <button className="text-gray-900 dark:text-white font-medium hover:text-blue-600 transition flex items-center gap-1">
                   Invested Products
@@ -84,7 +80,6 @@ const handleLogout = async () => {
                 </div>
               </div>
 
-              {/* === TRADE DROPDOWN - THIS IS WHAT YOU WANTED === */}
               <div className="relative group">
                 <button className="text-gray-900 dark:text-white font-medium hover:text-blue-600 transition flex items-center gap-1">
                   Trade
@@ -110,7 +105,6 @@ const handleLogout = async () => {
                   </div>
                 </div>
               </div>
-              {/* === END OF TRADE DROPDOWN === */}
 
               <Link href="/dashboard/orders" className="text-gray-900 dark:text-white font-medium hover:text-blue-600 transition">
                 Orders
@@ -118,18 +112,16 @@ const handleLogout = async () => {
 
             </div>
 
-            {/* Right Side */}
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setIsDepositOpen(true)}
-                className="hidden sm:block px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition"
+                className="hidden sm:block px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition cursor-pointer"
               >
                 Deposit
               </button>
 
-              {/* Account Dropdown */}
               <div className="relative group">
-                <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -139,14 +131,13 @@ const handleLogout = async () => {
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-6 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 font-medium"
+                    className="w-full text-left px-6 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 font-medium cursor-pointer"
                   >
                     Logout
                   </button>
                 </div>
               </div>
 
-              {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-md text-gray-700 dark:text-gray-300"
