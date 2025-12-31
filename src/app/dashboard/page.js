@@ -21,7 +21,7 @@ export default function Dashboard() {
 const fetchAssets = async () => {
   try {
     const res = await fetch("/api/auth/assets", {
-      credentials: "include",   
+      credentials: "include",
       cache: "no-store",
     });
 
@@ -30,29 +30,57 @@ const fetchAssets = async () => {
       return;
     }
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch assets");
+    if (!res.ok) throw new Error("Failed to fetch assets");
+
+    const { assets: assetsObj } = await res.json(); // ← Correctly extract object
+
+    // Convert object to array for display
+    const updatedAssets = Object.entries(assetsObj).map(([symbol, balance]) => ({
+      symbol,
+      balance: Number(balance ?? 0),
+      value: Number(balance ?? 0), // placeholder - real value from CoinGecko below
+      change: 0,
+    }));
+
+    // Optional: Fetch real prices (like your old code had)
+    const coinMap = {
+      BTC: "bitcoin",
+      ETH: "ethereum",
+      USDT: "tether",
+      TRX: "tron",
+      BNB: "binancecoin",
+      SOL: "solana",
+      ADA: "cardano",
+    };
+
+    const ids = Object.keys(assetsObj)
+      .map(s => coinMap[s])
+      .filter(Boolean)
+      .join(",");
+
+    let prices = {};
+    if (ids) {
+      const priceRes = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`
+      );
+      if (priceRes.ok) prices = await priceRes.json();
     }
 
-    const data = await res.json();
-  
-    const coinMap = { btc: "bitcoin", eth: "ethereum", usdt: "tether", sol: "solana" /* ... etc */ };
-    const ids = data.map(a => coinMap[a.symbol.toLowerCase()]).filter(Boolean);
+    // Update with real value and change
+    const finalAssets = updatedAssets.map(asset => {
+      const id = coinMap[asset.symbol];
+      const priceData = prices[id] || { usd: asset.symbol === "USDT" ? 1 : 0, usd_24h_change: 0 };
+      return {
+        ...asset,
+        value: Number((asset.balance * priceData.usd).toFixed(2)),
+        change: Number((priceData.usd_24h_change || 0).toFixed(2)),
+      };
+    }).sort((a, b) => b.value - a.value);
 
-    const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`);
-    const priceData = await priceRes.json();
-
-    const updatedAssets = data.map(a => {
-      const id = coinMap[a.symbol.toLowerCase()];
-      const priceUSD = priceData[id]?.usd ?? 0;
-      return { ...a, value: a.balance * priceUSD };
-    });
-
-    setAssets(updatedAssets);
-
+    setAssets(finalAssets);
   } catch (err) {
-    console.error(err);
-   
+    console.error("Assets fetch error:", err);
+    setAssets([]);
   }
 };
 
@@ -414,7 +442,7 @@ const orders = [
     />
 
     <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col">
-
+      {/* Header */}
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Withdraw</h2>
         <button
@@ -426,6 +454,8 @@ const orders = [
           </svg>
         </button>
       </div>
+
+
       <div className="flex-1 overflow-y-auto p-6">
         <WithdrawForm />
       </div>

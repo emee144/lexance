@@ -28,7 +28,7 @@ export default function SpotTradingPage() {
   const [recentTrades, setRecentTrades] = useState([]);
   const [viewMode, setViewMode] = useState('orderbook');
   const [usdtBalance, setUsdtBalance] = useState(0); 
-  // Fetch real wallet balance
+
   useEffect(() => {
   if (!isLoggedIn) {
     setUsdtBalance(0);
@@ -39,17 +39,16 @@ export default function SpotTradingPage() {
     try {
       const res = await fetch('/api/auth/assets');
       if (res.ok) {
-        const assets = await res.json();
-        const usdtAsset = assets.find(a => a.symbol === 'USDT');
-        if (usdtAsset) {
-          setUsdtBalance(usdtAsset.balance);
-        }
+        const data = await res.json();
+        const assetsObj = data.assets || {}; // ← Extract the object
+        setUsdtBalance(assetsObj.USDT || 0); // ← Direct access
       } else if (res.status === 401) {
         setIsLoggedIn(false);
         setUsdtBalance(0);
       }
     } catch (err) {
       console.error('Failed to fetch balance', err);
+      setUsdtBalance(0);
     }
   };
 

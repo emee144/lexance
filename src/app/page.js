@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import AnimatedCard from "@/components/AnimatedCard";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import AuthPanel from "@/components/AuthPanel";
 import Footer from "@/components/Footer";
 import CryptoSavingsCarousel from "@/components/CryptoSavingsCarousel";
 import CryptoSavingsGrid from "@/components/CryptoSavingsGrid";
 
 export default function Home() {
 const [menuOpen, setMenuOpen] = useState(false);
+const [authOpen, setAuthOpen] = useState(false);
 
 const [coins, setCoins] = useState([]);
 
@@ -58,11 +60,12 @@ return ( <div className="font-sans bg-gray-50 dark:bg-black min-h-screen">
         Buy, sell, and manage your crypto with our intuitive platform.
       </p>
       <div className="flex gap-4">
-        <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          <Link href="/signup">
-          Get Started
-          </Link>
-        </button>
+        <button
+              onClick={() => setAuthOpen(true)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold cursor-pointer"
+            >
+              Get Started
+            </button>
         <button className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50">
           <Link href="/about">
           About
@@ -147,6 +150,7 @@ return ( <div className="font-sans bg-gray-50 dark:bg-black min-h-screen">
 
 
   <Footer />
+  <AuthPanel isOpen={authOpen} onClose={() => setAuthOpen(false)} />
 </div>
   );
 }

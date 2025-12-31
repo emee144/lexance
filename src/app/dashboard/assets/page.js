@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import AuthPanel from '@/components/AuthPanel';
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
 
   const coinIcons = {
     USDT: "/usdt.png",
@@ -29,21 +31,21 @@ export default function AssetsPage() {
       });
 
       if (res.status === 401) {
-        window.location.href = "/login";
+        setAuthOpen(true);
         return;
       }
 
       if (!res.ok) throw new Error("Failed to load assets");
 
       const data = await res.json();
-      const assetsObj = data.assets || {}; 
+      const assetsObj = data.assets || {};
 
       const updatedAssets = Object.entries(assetsObj).map(([symbol, balance]) => ({
         symbol,
         balance: Number(balance ?? 0),
-        value: Number(balance ?? 0), 
-        change: 0, 
-      })).sort((a, b) => b.value - a.value); // Sort by value descending
+        value: Number(balance ?? 0),
+        change: 0,
+      })).sort((a, b) => b.value - a.value);
 
       setAssets(updatedAssets);
     } catch (err) {
@@ -151,6 +153,8 @@ export default function AssetsPage() {
           </>
         )}
       </div>
+
+      <AuthPanel isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 }
