@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import AnimatedCard from "@/components/AnimatedCard";
-import Navbar from "@/components/Navbar";
+
 import Link from "next/link";
 import AuthPanel from "@/components/AuthPanel";
 import Footer from "@/components/Footer";
@@ -49,7 +49,7 @@ useEffect(() => {
 
 
 return ( <div className="font-sans bg-gray-50 dark:bg-black min-h-screen">
-<Navbar />
+
 
   <section className="flex flex-col md:flex-row items-center justify-between px-8 py-24 max-w-7xl mx-auto">
     <div className="md:w-1/2">

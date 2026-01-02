@@ -35,6 +35,7 @@ export default function AuthPanel({ isOpen, onClose }) {
         setTimeout(() => {
           onClose();
           router.push('/dashboard');
+          router.refresh();
         }, 1500);
       } else {
         setMessage(data.error || 'Something went wrong');

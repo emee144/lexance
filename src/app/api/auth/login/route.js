@@ -2,7 +2,6 @@ import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export async function POST(req) {
   await connectDB();
@@ -25,10 +24,6 @@ export async function POST(req) {
       );
     }
 
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET not set");
-    }
-
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -37,18 +32,7 @@ export async function POST(req) {
 
     const isProd = process.env.NODE_ENV === "production";
 
-    const cookieStore = await cookies();
-    cookieStore.set({
-      name: "access_token",
-      value: token,
-      httpOnly: true,
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60,
-      sameSite: "lax",
-      secure: isProd,
-    });
-
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: "Login successful",
         user: {
@@ -57,11 +41,18 @@ export async function POST(req) {
           email: user.email,
         },
       },
-      {
-        status: 200,
-        headers: { "Cache-Control": "no-store" },
-      }
+      { status: 200 }
     );
+
+    response.cookies.set("access_token", token, {
+      httpOnly: true,
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+      sameSite: "lax",
+      secure: isProd,
+    });
+
+    return response;
 
   } catch (error) {
     console.error("Login error:", error);

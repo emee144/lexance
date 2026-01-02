@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import AuthPanel from '@/components/AuthPanel';
+
 const TradingChart = dynamic(() => import('@/components/TradingChart'), {
   ssr: false,
   loading: () => (
@@ -27,104 +29,105 @@ export default function SpotTradingPage() {
   const [asks, setAsks] = useState([]);
   const [recentTrades, setRecentTrades] = useState([]);
   const [viewMode, setViewMode] = useState('orderbook');
-  const [usdtBalance, setUsdtBalance] = useState(0); 
+  const [usdtBalance, setUsdtBalance] = useState(0);
+  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
-  if (!isLoggedIn) {
-    setUsdtBalance(0);
-    return;
-  }
+    if (!isLoggedIn) {
+      setUsdtBalance(0);
+      return;
+    }
 
-  const fetchBalance = async () => {
-    try {
-      const res = await fetch('/api/auth/assets');
-      if (res.ok) {
-        const data = await res.json();
-        const assetsObj = data.assets || {}; // ← Extract the object
-        setUsdtBalance(assetsObj.USDT || 0); // ← Direct access
-      } else if (res.status === 401) {
-        setIsLoggedIn(false);
+    const fetchBalance = async () => {
+      try {
+        const res = await fetch('/api/auth/assets');
+        if (res.ok) {
+          const data = await res.json();
+          const assetsObj = data.assets || {};
+          setUsdtBalance(assetsObj.USDT || 0);
+        } else if (res.status === 401) {
+          setIsLoggedIn(false);
+          setUsdtBalance(0);
+        }
+      } catch (err) {
         setUsdtBalance(0);
       }
-    } catch (err) {
-      console.error('Failed to fetch balance', err);
-      setUsdtBalance(0);
-    }
-  };
+    };
 
-  fetchBalance();
-  const interval = setInterval(fetchBalance, 30000);
-  return () => clearInterval(interval);
-}, [isLoggedIn]);
+    fetchBalance();
+    const interval = setInterval(fetchBalance, 30000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn]);
 
-useEffect(() => {
-  let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-  const checkLogin = async () => {
-    try {
-      const res = await fetch('/api/auth/check', {
-        credentials: 'include',
-      });
-      const data = await res.json();
+    const checkLogin = async () => {
+      try {
+        const res = await fetch('/api/auth/check', {
+          credentials: 'include',
+        });
+        const data = await res.json();
 
-      if (mounted) {
-        setIsLoggedIn(data.loggedIn === true);
-        if (!data.loggedIn) {
-          setUsdtBalance(0); // Critical: reset balance on logout/guest
+        if (mounted) {
+          setIsLoggedIn(data.loggedIn === true);
+          if (!data.loggedIn) {
+            setUsdtBalance(0);
+            setAuthOpen(true);
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          setIsLoggedIn(false);
+          setUsdtBalance(0);
+          setAuthOpen(true);
         }
       }
-    } catch (err) {
-      if (mounted) {
-        setIsLoggedIn(false);
-        setUsdtBalance(0);
-      }
-    }
-  };
-
-  checkLogin();
-
-  return () => { mounted = false };
-}, []);
-
-
-  useEffect(() => {
-
-  const depthWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@depth20@100ms');
-  depthWs.onmessage = (e) => {
-    const d = JSON.parse(e.data);
-    setBids(d.bids.slice(0, 8).map(b => [parseFloat(b[0]), parseFloat(b[1])]));
-    setAsks(d.asks.slice(0, 8).map(a => [parseFloat(a[0]), parseFloat(a[1])]));
-
-    if (d.bids.length > 0 && d.asks.length > 0) {
-      const bestBid = parseFloat(d.bids[0][0]);
-      const bestAsk = parseFloat(d.asks[0][0]);
-      const midPrice = (bestBid + bestAsk) / 2;
-      setPrevPrice(currentPrice);
-      setCurrentPrice(midPrice);
-    }
-  };
-
-  // Recent Trades
-  const tradeWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
-  tradeWs.onmessage = (e) => {
-    const trade = JSON.parse(e.data);
-    const newTrade = {
-      price: parseFloat(trade.p).toFixed(2),
-      qty: parseFloat(trade.q).toFixed(4),
-      time: new Date(trade.T).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      isBuyerMaker: trade.m // true = sell (red), false = buy (green)
     };
-    setRecentTrades(prev => [newTrade, ...prev.slice(0, 19)]);
-  };
 
-  return () => {
-    depthWs.close();
-    tradeWs.close();
-  };
-}, [currentPrice]);
+    checkLogin();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
-    let calcPrice = price || currentPrice;
+    const depthWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@depth20@100ms');
+    depthWs.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      setBids(d.bids.slice(0, 8).map(b => [parseFloat(b[0]), parseFloat(b[1])]));
+      setAsks(d.asks.slice(0, 8).map(a => [parseFloat(a[0]), parseFloat(a[1])]));
+
+      if (d.bids.length > 0 && d.asks.length > 0) {
+        const bestBid = parseFloat(d.bids[0][0]);
+        const bestAsk = parseFloat(d.asks[0][0]);
+        const midPrice = (bestBid + bestAsk) / 2;
+        setPrevPrice(currentPrice);
+        setCurrentPrice(midPrice);
+      }
+    };
+
+    const tradeWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+    tradeWs.onmessage = (e) => {
+      const trade = JSON.parse(e.data);
+      const newTrade = {
+        price: parseFloat(trade.p).toFixed(2),
+        qty: parseFloat(trade.q).toFixed(4),
+        time: new Date(trade.T).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        isBuyerMaker: trade.m,
+      };
+      setRecentTrades(prev => [newTrade, ...prev.slice(0, 19)]);
+    };
+
+    return () => {
+      depthWs.close();
+      tradeWs.close();
+    };
+  }, [currentPrice]);
+
+  useEffect(() => {
+    const calcPrice = price || currentPrice;
     if (calcPrice && quantity) {
       setTotal((+calcPrice * +quantity).toFixed(2));
     } else {
@@ -140,13 +143,67 @@ useEffect(() => {
     }
   };
 
-   const handleTrade = () => {
+  const getOrderPayload = () => {
+    if (!currentPrice || currentPrice <= 0) {
+      alert("Waiting for price data...");
+      return null;
+    }
+
+    let orderQuantity;
+
+    if (quantity && Number(quantity) > 0) {
+      orderQuantity = Number(Number(quantity).toFixed(8));
+    } else {
+      if (usdtBalance <= 0) {
+        alert("Insufficient USDT balance");
+        return null;
+      }
+      orderQuantity = Number((usdtBalance / currentPrice).toFixed(8));
+    }
+
+    if (orderQuantity <= 0) {
+      alert("Invalid quantity");
+      return null;
+    }
+
+    const orderPrice = Number(currentPrice.toFixed(2));
+    const orderTotal = Number((orderQuantity * orderPrice).toFixed(2));
+
+    return {
+      pair: "BTC/USDT",
+      side: activeTab.toLowerCase(),
+      price: orderPrice,
+      quantity: orderQuantity,
+      total: orderTotal,
+    };
+  };
+
+  const handleTrade = async () => {
     if (!isLoggedIn) {
-      router.push('/login');
+      setAuthOpen(true);
       return;
     }
 
-    alert('ORDER PLACED! (Demo)');
+    const payload = getOrderPayload();
+    if (!payload) return;
+
+    try {
+      const res = await fetch('/api/auth/trade/spot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`${payload.side.toUpperCase()} order successful! ${payload.quantity} BTC`);
+      } else {
+        alert(data.error || 'Trade failed');
+      }
+    } catch (err) {
+      alert('Network error');
+    }
   };
 
   if (isLoggedIn === null) {
@@ -159,7 +216,6 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-[#0b0e11] text-white">
-      {/* Header */}
       <header className="border-b border-gray-800 px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-6">
@@ -197,7 +253,6 @@ useEffect(() => {
 
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="h-[70vh] w-full max-w-7xl grid grid-cols-1 gap-4 lg:grid-cols-12">
-         
           <div className="lg:col-span-7">
             <div className="h-full overflow-hidden rounded-xl border border-gray-700 bg-[#0b0e11] shadow-2xl">
               <TradingChart timeframe={timeframe} />
@@ -221,69 +276,63 @@ useEffect(() => {
                 </button>
               </div>
 
-             <div className="flex-1 overflow-y-auto p-4 text-sm">
-  {viewMode === 'orderbook' && (
-    <>
-      <div className="mb-2">
-        {asks.slice().reverse().map(([price, qty], i) => (
-          <div key={i} className="flex justify-between text-red-400">
-            <span>{price.toFixed(2)}</span>
-            <span>{qty.toFixed(4)}</span>
-          </div>
-        ))}
-      </div>
-      {currentPrice && (
-        <div className="my-2 text-center text-base font-bold text-yellow-400">
-          {currentPrice.toFixed(2)}
-        </div>
-      )}
+              <div className="flex-1 overflow-y-auto p-4 text-sm">
+                {viewMode === 'orderbook' && (
+                  <>
+                    <div className="mb-2">
+                      {asks.slice().reverse().map(([price, qty], i) => (
+                        <div key={i} className="flex justify-between text-red-400">
+                          <span>{price.toFixed(2)}</span>
+                          <span>{qty.toFixed(4)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {currentPrice && (
+                      <div className="my-2 text-center text-base font-bold text-yellow-400">
+                        {currentPrice.toFixed(2)}
+                      </div>
+                    )}
+                    <div>
+                      {bids.map(([price, qty], i) => (
+                        <div key={i} className="flex justify-between text-green-400">
+                          <span>{price.toFixed(2)}</span>
+                          <span>{qty.toFixed(4)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
 
-      <div>
-        {bids.map(([price, qty], i) => (
-          <div key={i} className="flex justify-between text-green-400">
-            <span>{price.toFixed(2)}</span>
-            <span>{qty.toFixed(4)}</span>
-          </div>
-        ))}
-      </div>
-    </>
-  )}
-
-  {viewMode === 'trades' && (
-    <div className="space-y-1">
-      {recentTrades.map((t, i) => (
-        <div
-          key={i}
-          className={`flex justify-between ${
-            t.isBuyerMaker ? 'text-red-400' : 'text-green-400'
-          }`}
-        >
-          <span>{t.price}</span>
-          <span>{t.qty}</span>
-          <span className="text-gray-400">{t.time}</span>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-
+                {viewMode === 'trades' && (
+                  <div className="space-y-1">
+                    {recentTrades.map((t, i) => (
+                      <div
+                        key={i}
+                        className={`flex justify-between ${t.isBuyerMaker ? 'text-red-400' : 'text-green-400'}`}
+                      >
+                        <span>{t.price}</span>
+                        <span>{t.qty}</span>
+                        <span className="text-gray-400">{t.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Buy/Sell Panel */}
           <div className="lg:col-span-2">
             <div className="h-full rounded-xl bg-[#1a1a1a] p-4 flex flex-col shadow-2xl">
-              {/* Real Balance from API */}
               <div className="mb-4">
-  <p className="text-sm text-gray-400">Available Balance</p>
-  {isLoggedIn ? (
-    <p className="text-2xl font-bold">
-      {usdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
-    </p>
-  ) : (
-    <p className="text-2xl font-bold text-gray-500">— USDT</p>
-  )}
-</div>
+                <p className="text-sm text-gray-400">Available Balance</p>
+                {isLoggedIn ? (
+                  <p className="text-2xl font-bold">
+                    {usdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                  </p>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-500">— USDT</p>
+                )}
+              </div>
 
               <div className="mb-3 flex">
                 <button
@@ -335,16 +384,18 @@ useEffect(() => {
                 </button>
               ) : (
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => setAuthOpen(true)}
                   className="mt-auto w-full rounded-lg bg-blue-600 py-3 font-bold hover:bg-blue-700"
                 >
-                  Login 
+                  Login
                 </button>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      <AuthPanel isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 }

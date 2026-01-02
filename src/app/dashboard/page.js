@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-import DashboardNavbar from "@/components/DashboardNavbar";
 import CryptoSavingsCarousel from "@/components/CryptoSavingsCarousel";
 import DepositDrawerContent from "@/components/DepositDrawerContent";
 import DepositCryptoPage from "@/app/deposit/crypto/page";
@@ -32,17 +31,15 @@ const fetchAssets = async () => {
 
     if (!res.ok) throw new Error("Failed to fetch assets");
 
-    const { assets: assetsObj } = await res.json(); // ← Correctly extract object
+    const { assets: assetsObj } = await res.json(); 
 
-    // Convert object to array for display
     const updatedAssets = Object.entries(assetsObj).map(([symbol, balance]) => ({
       symbol,
       balance: Number(balance ?? 0),
-      value: Number(balance ?? 0), // placeholder - real value from CoinGecko below
+      value: Number(balance ?? 0), 
       change: 0,
     }));
 
-    // Optional: Fetch real prices (like your old code had)
     const coinMap = {
       BTC: "bitcoin",
       ETH: "ethereum",
@@ -66,7 +63,6 @@ const fetchAssets = async () => {
       if (priceRes.ok) prices = await priceRes.json();
     }
 
-    // Update with real value and change
     const finalAssets = updatedAssets.map(asset => {
       const id = coinMap[asset.symbol];
       const priceData = prices[id] || { usd: asset.symbol === "USDT" ? 1 : 0, usd_24h_change: 0 };
@@ -137,7 +133,6 @@ const orders = [
 
   return (
     <div className="font-sans bg-gray-50 dark:bg-black min-h-screen flex flex-col">
-      <DashboardNavbar />
 
       <section className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-8 py-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
@@ -393,7 +388,7 @@ const orders = [
     />
 
     <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col">
-      {/* Header */}
+    
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-6 flex items-center justify-between">
         {depositView === "crypto" ? (
           <button

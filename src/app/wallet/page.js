@@ -1,5 +1,8 @@
 'use client';
+
 import { useState, useEffect } from 'react';
+import AuthPanel from '@/components/AuthPanel';
+
 export default function WalletPage() {
   const [activeTab, setActiveTab] = useState('assets');
   const [assets, setAssets] = useState([]);
@@ -9,6 +12,7 @@ export default function WalletPage() {
   const [totalAssetsUSDT, setTotalAssetsUSDT] = useState(0);
   const [totalFundingUSDT, setTotalFundingUSDT] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
     const checkLogin = async () => {
@@ -16,8 +20,12 @@ export default function WalletPage() {
         const res = await fetch('/api/auth/check');
         const data = await res.json();
         setIsLoggedIn(data.loggedIn);
+        if (!data.loggedIn) {
+          setAuthOpen(true); // Open AuthPanel if not logged in
+        }
       } catch {
         setIsLoggedIn(false);
+        setAuthOpen(true);
       }
     };
     checkLogin();
@@ -30,7 +38,7 @@ export default function WalletPage() {
         const res = await fetch('/api/auth/assets');
         if (!res.ok) throw new Error();
 
-        const { assets: assetsObj } = await res.json(); // ← Correctly access assets object
+        const { assets: assetsObj } = await res.json();
         let total = 0;
 
         const assetsArray = Object.entries(assetsObj).map(([coin, balance]) => {
@@ -52,10 +60,12 @@ export default function WalletPage() {
       }
     };
 
-    fetchAssets();
-    const interval = setInterval(fetchAssets, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (isLoggedIn) {
+      fetchAssets();
+      const interval = setInterval(fetchAssets, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const fetchFunding = async () => {
@@ -64,7 +74,7 @@ export default function WalletPage() {
         const res = await fetch('/api/auth/funding');
         if (!res.ok) throw new Error();
 
-        const { funding: fundingObj } = await res.json(); // ← Same pattern
+        const { funding: fundingObj } = await res.json();
         let total = 0;
 
         const fundingArray = Object.entries(fundingObj).map(([coin, balance]) => {
@@ -86,10 +96,12 @@ export default function WalletPage() {
       }
     };
 
-    fetchFunding();
-    const interval = setInterval(fetchFunding, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (isLoggedIn) {
+      fetchFunding();
+      const interval = setInterval(fetchFunding, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn]);
 
   const isLoading = activeTab === 'assets' ? loadingAssets : loadingFunding;
   const currentBalances = activeTab === 'assets' ? assets : funding;
@@ -106,9 +118,12 @@ export default function WalletPage() {
             <p className="text-lg text-gray-300 mb-6">
               Login to see your real balances and transaction history
             </p>
-            <a href="/login" className="inline-block px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-xl">
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="inline-block px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-xl"
+            >
               Login Now
-            </a>
+            </button>
           </div>
         )}
 
@@ -209,6 +224,8 @@ export default function WalletPage() {
           )}
         </div>
       </div>
+
+      <AuthPanel isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 }
