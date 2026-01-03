@@ -91,7 +91,7 @@ const handleLogout = async () => {
                 <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                   <div className="py-2">
                     <Link href="/trade/spot" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium">
-                      Spot Trading
+                      Spot 
                     </Link>
                     <Link href="/trade/futures" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">
                       Futures

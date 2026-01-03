@@ -5,7 +5,6 @@ import AnimatedCard from "@/components/AnimatedCard";
 
 import Link from "next/link";
 import AuthPanel from "@/components/AuthPanel";
-import Footer from "@/components/Footer";
 import CryptoSavingsCarousel from "@/components/CryptoSavingsCarousel";
 import CryptoSavingsGrid from "@/components/CryptoSavingsGrid";
 
@@ -147,9 +146,6 @@ return ( <div className="font-sans bg-gray-50 dark:bg-black min-h-screen">
       </div>
     </div>
   </section>
-
-
-  <Footer />
   <AuthPanel isOpen={authOpen} onClose={() => setAuthOpen(false)} />
 </div>
   );

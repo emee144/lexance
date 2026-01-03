@@ -16,7 +16,7 @@ export async function GET(request) {
   }
 
   try {
-    let wallet = await Wallet.findOne({ user: user._id }).lean();
+    let wallet = await Wallet.findOne({ user: user._id });
 
     if (!wallet) {
       const empty = {};
@@ -27,11 +27,9 @@ export async function GET(request) {
         assets: empty,
         funding: empty,
       });
-      wallet = wallet.toObject();
     }
-    const funding = wallet.funding instanceof Map 
-      ? Object.fromEntries(wallet.funding) 
-      : (wallet.funding || {});
+
+    const funding = wallet.funding || {};
 
     return NextResponse.json({ funding });
   } catch (err) {

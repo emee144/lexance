@@ -8,6 +8,7 @@ export default function WithdrawForm() {
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [balances, setBalances] = useState({});
   const [loading, setLoading] = useState(true);
+
   const externalWithdrawalFees = {
     USDT: { TRC20: 1, ERC20: 5, BEP20: 1 },
     BTC: { BTC: 0.0005, "BTC-Bech32": 0.0005 },
@@ -43,13 +44,20 @@ export default function WithdrawForm() {
       if (!res.ok) throw new Error("Failed to load balances");
 
       const data = await res.json();
-      const balanceMap = {};
-      data.forEach((asset) => {
-        const symbol = asset.symbol;
-        const balance = Number(asset.balance || 0);
-        balanceMap[symbol] = (balanceMap[symbol] || 0) + balance;
-      });
-      setBalances(balanceMap);
+
+      if (data.assets) {
+        setBalances(data.assets);
+      } else if (Array.isArray(data)) {
+        const map = {};
+        data.forEach((asset) => {
+          const symbol = asset.symbol;
+          const balance = Number(asset.balance || 0);
+          map[symbol] = (map[symbol] || 0) + balance;
+        });
+        setBalances(map);
+      } else {
+        setBalances({});
+      }
     } catch (err) {
       console.error("Error loading balances:", err);
       setBalances({});
@@ -73,80 +81,70 @@ export default function WithdrawForm() {
   };
 
   const handleWithdraw = async () => {
-  if (!amount || !withdrawAddress || !selectedNetwork) {
-    alert("Please fill in all fields");
-    return;
-  }
-
-  const available = balances[selectedCoin] || 0;
-  if (Number(amount) > available) {
-    alert(`Insufficient balance. Available: ${formatBalance(available)} ${selectedCoin}`);
-    return;
-  }
-
-  // Network fee (example: you can adjust these values)
-  const externalWithdrawalFees = {
-    USDT: { TRC20: 1, ERC20: 5, BEP20: 1 },
-    BTC: { BTC: 0.0005, "BTC-Bech32": 0.0005 },
-    ETH: { ERC20: 0.005 },
-    BNB: { BEP20: 0.001 },
-    TRX: { TRC20: 1 },
-  };
-  const fee = externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0;
-
-  if (Number(amount) <= fee) {
-    alert("Amount must be greater than the network fee");
-    return;
-  }
-
-  const netAmount = Number(amount) - fee;
-
-  try {
-    const res = await fetch("/api/auth/withdraw", {
-      method: "POST",
-      credentials: "include", // sends HTTP-only cookie
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        coin: selectedCoin,
-        network: selectedNetwork,
-        amount: Number(amount),
-        withdrawAddress,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error || "Withdrawal failed");
+    if (!amount || !withdrawAddress || !selectedNetwork) {
+      alert("Please fill in all fields");
       return;
     }
 
-    alert(
-      `Withdrawal successful!\n` +
-      `Requested: ${amount} ${selectedCoin}\n` +
-      `Network Fee: ${fee} ${selectedCoin}\n` +
-      `You will receive: ${netAmount.toFixed(8)} ${selectedCoin}`
-    );
+    const available = balances[selectedCoin] || 0;
+    if (Number(amount) > available) {
+      alert(`Insufficient balance. Available: ${formatBalance(available)} ${selectedCoin}`);
+      return;
+    }
 
-    // Update local balances
-    setBalances(prev => ({
-      ...prev,
-      [selectedCoin]: prev[selectedCoin] - Number(amount),
-    }));
-    setAmount(""); // reset amount
-    setWithdrawAddress(""); // reset address
-  } catch (err) {
-    console.error("Withdrawal error:", err);
-    alert("Server error, try again later");
-  }
-};
+    const fee = externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0;
 
+    if (Number(amount) <= fee) {
+      alert("Amount must be greater than the network fee");
+      return;
+    }
+
+    const netAmount = Number(amount) - fee;
+
+    try {
+      const res = await fetch("/api/auth/withdraw", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          coin: selectedCoin,
+          network: selectedNetwork,
+          amount: Number(amount),
+          withdrawAddress,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Withdrawal failed");
+        return;
+      }
+
+      alert(
+        `Withdrawal successful!\n` +
+        `Requested: ${amount} ${selectedCoin}\n` +
+        `Network Fee: ${fee} ${selectedCoin}\n` +
+        `You will receive: ${netAmount.toFixed(8)} ${selectedCoin}`
+      );
+
+      setBalances(prev => ({
+        ...prev,
+        [selectedCoin]: prev[selectedCoin] - Number(amount),
+      }));
+      setAmount("");
+      setWithdrawAddress("");
+    } catch (err) {
+      console.error("Withdrawal error:", err);
+      alert("Server error, try again later");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-950 via-blue-950 to-black py-12 px-4">
-      <div className="max-w-5xl mx-auto"> {/* Wider container */}
+      <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-white mb-2">Withdraw Crypto</h2> {/* Smaller text */}
+          <h2 className="text-3xl font-bold text-white mb-2">Withdraw Crypto</h2>
           <p className="text-gray-400 text-sm">Send funds to your external wallet instantly</p>
         </div>
 
@@ -187,21 +185,20 @@ export default function WithdrawForm() {
             </div>
           </div>
 
-<div className="mb-6">
-  <label className="block text-gray-300 text-xs font-medium mb-1">Network</label>
-  <select
-    value={selectedNetwork}
-    onChange={(e) => setSelectedNetwork(e.target.value)}
-    className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
-  >
-    {networkOptions[selectedCoin].map((net) => (
-      <option key={net} value={net} className="bg-gray-900 py-2">
-        {net} {net === "TRC20" ? "(Low Fee - Recommended)" : ""}
-      </option>
-    ))}
-  </select>
-</div>
-
+          <div className="mb-6">
+            <label className="block text-gray-300 text-xs font-medium mb-1">Network</label>
+            <select
+              value={selectedNetwork}
+              onChange={(e) => setSelectedNetwork(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+            >
+              {networkOptions[selectedCoin].map((net) => (
+                <option key={net} value={net} className="bg-gray-900 py-2">
+                  {net} {net === "TRC20" ? "(Low Fee - Recommended)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="mb-6">
             <label className="block text-gray-300 text-xs font-medium mb-1">Withdrawal Address</label>
@@ -232,16 +229,16 @@ export default function WithdrawForm() {
               placeholder="0.00"
               className="w-full px-4 py-3 bg-gray-800/70 border border-gray-700 rounded-xl text-white text-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
             />
-            <div className="mb-6 text-sm text-gray-300">
-  <p>Fee: {externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0} {selectedCoin}</p>
-  <p>
-    You will receive:{" "}
-    {amount
-      ? (Number(amount) - (externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0)).toFixed(8)
-      : "0"}{" "}
-    {selectedCoin}
-  </p>
-</div>
+            <div className="mt-4 text-sm text-gray-300">
+              <p>Fee: {externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0} {selectedCoin}</p>
+              <p>
+                You will receive:{" "}
+                {amount
+                  ? (Number(amount) - (externalWithdrawalFees[selectedCoin]?.[selectedNetwork] || 0)).toFixed(8)
+                  : "0"}{" "}
+                {selectedCoin}
+              </p>
+            </div>
           </div>
 
           <button

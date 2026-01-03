@@ -8,24 +8,39 @@ export default function TransferPage() {
   const [to, setTo] = useState("funding");
   const [coin, setCoin] = useState("USDT");
   const [amount, setAmount] = useState("");
-  const [balances, setBalances] = useState({});
+  const [balances, setBalances] = useState({
+    assets: {},
+    funding: {},
+    futures: { USDT: 0 },
+  });
   const [loading, setLoading] = useState(true);
   const [transferring, setTransferring] = useState(false);
 
   const fetchBalances = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/assets", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to fetch balances");
-      const data = await res.json();
 
-      const map = {};
-      data.forEach((b) => {
-        map[b.symbol] = b.balance;
+      const [assetsRes, fundingRes, futuresRes] = await Promise.all([
+        fetch("/api/auth/assets", { cache: "no-store" }),
+        fetch("/api/auth/funding", { cache: "no-store" }),
+        fetch("/api/auth/futures/account", { cache: "no-store" }),
+      ]);
+
+      const assetsData = assetsRes.ok ? await assetsRes.json() : {};
+      const fundingData = fundingRes.ok ? await fundingRes.json() : {};
+      const futuresData = futuresRes.ok ? await futuresRes.json() : { account: null };
+
+      const assetsMap = assetsData.assets || assetsData || {};
+      const fundingMap = fundingData.funding || fundingData || {};
+      const futuresBalance = futuresData.account?.balance || 0;
+
+      setBalances({
+        assets: assetsMap,
+        funding: fundingMap,
+        futures: { USDT: futuresBalance },
       });
-      setBalances(map);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch balances:", err);
     } finally {
       setLoading(false);
     }
@@ -63,13 +78,20 @@ export default function TransferPage() {
 
       alert("Transfer successful!");
       setAmount("");
-      fetchBalances();
+      await fetchBalances();
     } catch (err) {
       console.error(err);
       alert(err.message || "Transfer failed");
     } finally {
       setTransferring(false);
     }
+  };
+
+  const getBalance = () => {
+    if (from === "assets") return balances.assets[coin] || 0;
+    if (from === "funding") return balances.funding[coin] || 0;
+    if (from === "futures") return balances.futures.USDT || 0;
+    return 0;
   };
 
   return (
@@ -87,7 +109,7 @@ export default function TransferPage() {
               >
                 <option value="assets">Assets</option>
                 <option value="funding">Funding</option>
-                <option value="futures">Futures</option>
+                <option value="futures">Futures (USDT only)</option>
               </select>
             </div>
             <div>
@@ -99,24 +121,30 @@ export default function TransferPage() {
               >
                 <option value="funding">Funding</option>
                 <option value="assets">Assets</option>
-                <option value="futures">Futures</option>
+                <option value="futures">Futures (USDT only)</option>
               </select>
             </div>
           </div>
 
           <div className="mb-8">
-            <label className="block text-gray-400 mb-2">Coin</label>
+            <label className="block text-gray-400 mb-2">
+              Coin {loading ? "" : `- Available: ${getBalance().toFixed(4)}`}
+            </label>
             <select
               value={coin}
               onChange={(e) => setCoin(e.target.value)}
-              className="w-full bg-gray-800 rounded-xl px-6 py-4"
+              disabled={from === "futures" || to === "futures"}
+              className="w-full bg-gray-800 rounded-xl px-6 py-4 disabled:opacity-50"
             >
-              {coins.map((c) => (
+              {(from === "futures" || to === "futures" ? ["USDT"] : coins).map((c) => (
                 <option key={c} value={c}>
-                  {c} {balances[c] !== undefined && `- Balance: ${balances[c]}`}
+                  {c}
                 </option>
               ))}
             </select>
+            {from === "futures" || to === "futures" ? (
+              <p className="text-sm text-gray-500 mt-2">Futures transfers only support USDT</p>
+            ) : null}
           </div>
 
           <input
@@ -129,8 +157,8 @@ export default function TransferPage() {
 
           <button
             onClick={handleTransfer}
-            disabled={transferring}
-            className="w-full bg-linear-to-r from-purple-600 to-blue-600 py-5 rounded-2xl text-xl font-bold hover:from-purple-500 hover:to-blue-500 transition disabled:opacity-50"
+            disabled={transferring || loading}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 py-5 rounded-2xl text-xl font-bold hover:from-purple-500 hover:to-blue-500 transition disabled:opacity-50"
           >
             {transferring ? "Transferring..." : "Confirm Transfer (0 fee · Instant)"}
           </button>
