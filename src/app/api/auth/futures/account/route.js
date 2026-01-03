@@ -3,16 +3,16 @@ import { connectDB } from "@/lib/mongodb";
 import FuturesAccount from "@/models/FuturesAccount";
 import { getCurrentUser } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request) {
   try {
     await connectDB();
 
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const account = await FuturesAccount.findOne({ user: user.id });
+    const account = await FuturesAccount.findOne({ user: user._id });
 
     if (!account) {
       return NextResponse.json({
@@ -28,11 +28,11 @@ export async function GET() {
 
     return NextResponse.json({
       account: {
-        balance: account.balance ?? 0,
-        marginUsed: account.marginUsed ?? 0,
-        equity: account.equity ?? account.balance ?? 0,
-        availableMargin: account.availableMargin ?? account.balance ?? 0,
-        unrealizedPnl: account.unrealizedPnl ?? 0,
+        balance: Number(account.balance) || 0,
+        marginUsed: Number(account.marginUsed) || 0,
+        equity: Number(account.equity) || Number(account.balance) || 0,
+        availableMargin: Number(account.availableMargin) || Number(account.balance) || 0,
+        unrealizedPnl: Number(account.unrealizedPnl) || 0,
       },
     });
   } catch (error) {

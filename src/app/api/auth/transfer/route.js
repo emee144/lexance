@@ -93,26 +93,24 @@ export async function POST(req) {
       wallet.funding.set(coin, (wallet.funding.get(coin) || 0) - amt);
       wallet.assets.set(coin, (wallet.assets.get(coin) || 0) + amt);
     } else if (from === "funding" && to === "futures") {
-      wallet.funding.set("USDT", wallet.funding.get("USDT") || 0 - amt);
+      wallet.funding.set("USDT", (wallet.funding.get("USDT") || 0) - amt);
       futuresAccount.balance += amt;
-      futuresAccount.availableMargin += amt;
       futuresAccount.equity += amt;
     } else if (from === "futures" && to === "funding") {
       futuresAccount.balance -= amt;
-      futuresAccount.availableMargin -= amt;
       futuresAccount.equity -= amt;
       wallet.funding.set("USDT", (wallet.funding.get("USDT") || 0) + amt);
     } else if (from === "assets" && to === "futures") {
       wallet.assets.set(coin, (wallet.assets.get(coin) || 0) - amt);
       futuresAccount.balance += amt;
-      futuresAccount.availableMargin += amt;
       futuresAccount.equity += amt;
     } else if (from === "futures" && to === "assets") {
       futuresAccount.balance -= amt;
-      futuresAccount.availableMargin -= amt;
       futuresAccount.equity -= amt;
       wallet.assets.set(coin, (wallet.assets.get(coin) || 0) + amt);
     }
+
+    futuresAccount.availableMargin = futuresAccount.balance - futuresAccount.marginUsed;
 
     await wallet.save();
     await futuresAccount.save();
