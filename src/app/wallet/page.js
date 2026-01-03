@@ -21,7 +21,7 @@ export default function WalletPage() {
         const data = await res.json();
         setIsLoggedIn(data.loggedIn);
         if (!data.loggedIn) {
-          setAuthOpen(true); // Open AuthPanel if not logged in
+          setAuthOpen(true); 
         }
       } catch {
         setIsLoggedIn(false);

@@ -36,7 +36,6 @@ const handleLogout = async () => {
               </Link>
             </div>
 
-            {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-8">
 
               <Link href="/dashboard" className="text-gray-900 dark:text-white font-medium hover:text-blue-600 transition">

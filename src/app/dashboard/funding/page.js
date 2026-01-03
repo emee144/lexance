@@ -17,7 +17,7 @@ export default function FundingPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  const COINS = ["USDT", "BTC", "ETH", "BNB", "SOL", "TRX", "ADA"];
+  const COINS = ["USDT", "BTC", "ETH", "BNB", "SOL", "TRX", "ADA", "USDC"];
 
   const SUPPORTED_NETWORKS = {
     USDT: ['TRC20', 'ERC20'],
@@ -27,6 +27,7 @@ export default function FundingPage() {
     SOL: ['SOL'],
     TRX: ['TRC20'],
     ADA: ['ADA'],
+    USDC: ['ERC20'],
   };
 
   useEffect(() => {

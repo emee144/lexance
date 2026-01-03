@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const coins = ["USDT", "BTC", "ETH", "TRX"];
+const coins = ["USDT", "BTC", "ETH", "TRX", "BNB", "SOL", "ADA", "USDC"];
 
 export default function TransferPage() {
   const [from, setFrom] = useState("assets");
@@ -85,8 +85,9 @@ export default function TransferPage() {
                 onChange={(e) => setFrom(e.target.value)}
                 className="w-full bg-gray-800 rounded-xl px-6 py-4"
               >
-                <option value="assets">Assets / Wallet</option>
-                <option value="funding">Funding Account</option>
+                <option value="assets">Assets</option>
+                <option value="funding">Funding</option>
+                <option value="futures">Futures</option>
               </select>
             </div>
             <div>
@@ -96,8 +97,9 @@ export default function TransferPage() {
                 onChange={(e) => setTo(e.target.value)}
                 className="w-full bg-gray-800 rounded-xl px-6 py-4"
               >
-                <option value="funding">Funding Account</option>
-                <option value="assets">Assets / Wallet</option>
+                <option value="funding">Funding</option>
+                <option value="assets">Assets</option>
+                <option value="futures">Futures</option>
               </select>
             </div>
           </div>

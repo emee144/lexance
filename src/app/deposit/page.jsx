@@ -10,6 +10,7 @@ const supportedCoins = [
   { coin: "BNB", name: "BNB Chain", networks: ["BEP20"] },
   { coin: "SOL", name: "Solana", networks: ["SOL"] },
   { coin: "TRX", name: "TRON", networks: ["TRC20"] },
+  { coin: "USDC", name: "USD Coin", networks: ["ERC20"] }
 ];
 
 export default function DepositLandingPage() {

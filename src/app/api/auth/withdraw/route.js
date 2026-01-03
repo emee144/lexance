@@ -32,13 +32,13 @@ export async function POST(req) {
       );
     }
 
-    // Example network fees
     const externalWithdrawalFees = {
       USDT: { TRC20: 1, ERC20: 5, BEP20: 1 },
       BTC: { BTC: 0.0005, "BTC-Bech32": 0.0005 },
       ETH: { ERC20: 0.005 },
       BNB: { BEP20: 0.001 },
       TRX: { TRC20: 1 },
+      USDC: { ERC20: 5 },
     };
 
     const fee = externalWithdrawalFees[coin]?.[network] || 0;
@@ -70,11 +70,9 @@ export async function POST(req) {
       );
     }
 
-    // Deduct balance
     deposit.balance -= amt;
     await deposit.save();
 
-    // Create withdrawal record
     const withdrawal = await Withdrawal.create({
       user: user._id,
       coin,

@@ -1,10 +1,8 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import CryptoDepositHistory from "@/components/CryptoDepositHistory";
-
 export default function CryptoDepositPage({ selectedCoin: propCoin = "USDT", onBack }) {
   const [selectedCoin, setSelectedCoin] = useState(propCoin);
   const [networks, setNetworks] = useState([]);

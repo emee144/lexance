@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-const COINS = ["USDT", "BTC", "ETH", "BNB", "SOL", "TRX", "ADA"];
+const COINS = ["USDT", "BTC", "ETH", "BNB", "SOL", "TRX", "ADA", "USDC"];
 
 const WalletSchema = new mongoose.Schema(
   {

@@ -19,7 +19,6 @@ export async function POST(request) {
     const COIN = coin.toUpperCase().trim();
     const NETWORK = (network || "").toUpperCase().trim();
 
-    // Prevent duplicate txHash
     const existing = await CryptoDeposit.findOne({ txHash });
     if (existing) {
       return NextResponse.json(

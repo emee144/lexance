@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { getCurrentUser } from "@/lib/auth";
 import Wallet from "@/models/Wallet";
 
-const COINS = ["USDT", "BTC", "ETH", "TRX", "BNB", "SOL", "ADA"];
+const COINS = ["USDT", "BTC", "ETH", "TRX", "BNB", "SOL", "ADA", "USDC"];
 
 export async function GET(request) {
   await connectDB();

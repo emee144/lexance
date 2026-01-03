@@ -48,6 +48,7 @@ const fetchAssets = async () => {
       BNB: "binancecoin",
       SOL: "solana",
       ADA: "cardano",
+      USDC: "usd-coin",
     };
 
     const ids = Object.keys(assetsObj)
@@ -437,7 +438,7 @@ const orders = [
     />
 
     <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col">
-      {/* Header */}
+     
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Withdraw</h2>
         <button

@@ -11,7 +11,7 @@ const DepositAddressSchema = new mongoose.Schema(
     coin: {
       type: String,
       required: true,
-      enum: ["USDT", "BTC", "ETH", "BNB", "SOL", "TRX", "ADA"],
+      enum: ["USDT", "BTC", "ETH", "BNB", "SOL", "TRX", "ADA", "USDC"],
     },
 
     network: {
@@ -86,7 +86,6 @@ DepositAddressSchema.index(
 DepositAddressSchema.index({ isActive: 1 });
 DepositAddressSchema.index({ balance: 1 });
 
-// Ensure numeric values when sent to frontend
 DepositAddressSchema.set("toJSON", {
   transform: (_, ret) => {
     ret.balance = Number(ret.balance);

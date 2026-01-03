@@ -18,6 +18,7 @@ export default function AssetsPage() {
     BNB: "/bnb.png",
     SOL: "/sol.png",
     ADA: "/ada.png",
+    USDC: "/usdc.png",
   };
 
   const loadAssets = async () => {

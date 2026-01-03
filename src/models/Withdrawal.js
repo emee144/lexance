@@ -1,6 +1,4 @@
-// models/Withdrawal.js
 import mongoose from "mongoose";
-
 const withdrawalSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   coin: { type: String, required: true },

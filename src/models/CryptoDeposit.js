@@ -66,14 +66,12 @@ const cryptoDepositSchema = new mongoose.Schema({
 cryptoDepositSchema.index({ user: 1, status: 1, coin: 1 });
 cryptoDepositSchema.index({ credited: 1, createdAt: -1 });
 
-// PRE-SAVE HOOK — CREDIT IMMEDIATELY WHEN CREATED
 cryptoDepositSchema.pre("save", async function(next) {
-  if (this.credited) return next(); // already credited
+  if (this.credited) return next(); 
 
   try {
     const { user, coin, network, amount } = this;
 
-    // 1️⃣ Update DepositAddress balance
     await DepositAddress.findOneAndUpdate(
       { user, coin, network, isActive: true },
       {

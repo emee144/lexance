@@ -84,7 +84,7 @@ export async function POST(req) {
       const tronWeb = getTronWeb();
 
       // ===============================
-      // ETH / ERC20
+      // ETH / ERC20 
       // ===============================
       const ethNode = masterNode.derive(`m/44'/60'/0'/0/${userIndex}`);
       const ethPrivKey = "0x" + Buffer.from(ethNode.privateKey).toString("hex");
@@ -129,6 +129,7 @@ export async function POST(req) {
       const addresses = [
         { coin: "ETH", network: "ERC20", address: ethAddress },
         { coin: "USDT", network: "ERC20", address: ethAddress },
+        { coin: "USDC", network: "ERC20", address: ethAddress },
 
         { coin: "TRX", network: "TRC20", address: trxAddress },
         { coin: "USDT", network: "TRC20", address: trxAddress },
