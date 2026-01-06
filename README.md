@@ -2,10 +2,11 @@
 
 A modern cryptocurrency trading platform with spot, futures, and high-yield earning features.
 
-## Live Demo
+## Live 
 https://lexance.vercel.app
 
 ## Features
+- Users crypto addresses and wallet index are generated upon signup
 - Real-time spot & futures trading (BTCUSDT, etc.)
 - High-yield earning (up to 555% APR on USDT)
 - Secure wallet & savings on BTC/ETH
