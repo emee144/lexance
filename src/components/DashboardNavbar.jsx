@@ -96,7 +96,7 @@ const handleLogout = async () => {
                     <Link href="/trade/futures" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">
                       Futures
                     </Link>
-                    <Link href="/trade/spread-trading" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <Link href="/trade/spread" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">
                       Spread Trading
                     </Link>
                     <Link href="/trade/alpha" className="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">

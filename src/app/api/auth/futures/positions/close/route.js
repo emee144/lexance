@@ -16,17 +16,23 @@ export async function POST(req) {
     const { positionId, exitPrice } = await req.json();
 
     if (!positionId || !exitPrice || exitPrice <= 0) {
-      return NextResponse.json({ error: "Invalid positionId or exitPrice" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid positionId or exitPrice" },
+        { status: 400 }
+      );
     }
 
     const position = await FuturesPosition.findOne({
       _id: positionId,
-      user: user.id,
+      user: user._id,  
       status: "open",
     });
 
     if (!position) {
-      return NextResponse.json({ error: "Open position not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Open position not found" },
+        { status: 404 }
+      );
     }
 
     const pnl =
@@ -34,42 +40,62 @@ export async function POST(req) {
         ? (exitPrice - position.entryPrice) * position.quantity
         : (position.entryPrice - exitPrice) * position.quantity;
 
-    const account = await FuturesAccount.findById(position.account);
+    const account = await FuturesAccount.findOne({ user: user._id });  
 
     if (!account) {
-      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Futures account not found" },
+        { status: 404 }
+      );
     }
 
     const updatedAccount = await FuturesAccount.findOneAndUpdate(
-      { _id: account._id, marginUsed: { $gte: position.margin } },
+      {
+        _id: account._id,
+        marginUsed: account.marginUsed,  
+        balance: account.balance,
+      },
       {
         $inc: {
           marginUsed: -position.margin,
-          balance: position.margin + pnl,
-          availableMargin: position.margin + pnl,
+          balance: pnl,  
         },
       },
       { new: true }
     );
 
     if (!updatedAccount) {
-      return NextResponse.json({ error: "Failed to release margin" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to update account (concurrent modification)" },
+        { status: 409 }
+      );
     }
 
-    position.status = "closed";
-    position.realizedPnl = pnl;
-    position.exitPrice = exitPrice;
-    position.closedAt = new Date();
-    position.closeReason = "manual";
-
-    await position.save();
+    await FuturesPosition.findByIdAndUpdate(position._id, {
+      status: "closed",
+      realizedPnl: pnl,
+      exitPrice: exitPrice,
+      closedAt: new Date(),
+      closeReason: "manual",
+    });
 
     return NextResponse.json(
-      { message: "Position closed successfully", position, pnl },
+      {
+        message: "Position closed successfully",
+        realizedPnl: pnl.toFixed(2),
+        account: {
+          balance: updatedAccount.balance.toFixed(2),
+          marginUsed: updatedAccount.marginUsed.toFixed(2),
+          availableMargin: (updatedAccount.balance - updatedAccount.marginUsed).toFixed(2),
+        },
+      },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Error closing position:", error);
-    return NextResponse.json({ error: "Failed to close position" }, { status: 500 });
+  } catch (err) {
+    console.error("Close position error:", err);
+    return NextResponse.json(
+      { error: "Failed to close position" },
+      { status: 500 }
+    );
   }
 }

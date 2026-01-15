@@ -20,7 +20,6 @@ export async function GET(request) {
           balance: 0,
           marginUsed: 0,
           equity: 0,
-          availableMargin: 0,
           unrealizedPnl: 0,
         },
       });
@@ -31,7 +30,6 @@ export async function GET(request) {
         balance: Number(account.balance) || 0,
         marginUsed: Number(account.marginUsed) || 0,
         equity: Number(account.equity) || Number(account.balance) || 0,
-        availableMargin: Number(account.availableMargin) || Number(account.balance) || 0,
         unrealizedPnl: Number(account.unrealizedPnl) || 0,
       },
     });

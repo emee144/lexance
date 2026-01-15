@@ -24,11 +24,6 @@ const FuturesAccountSchema = new mongoose.Schema(
 
     equity: {
       type: Number,
-      default: 0, // balance + unrealized PnL
-    },
-
-    marginAvailable: {
-      type: Number,
       default: 0,
     },
 
@@ -42,6 +37,13 @@ const FuturesAccountSchema = new mongoose.Schema(
     collection: "futuresaccounts",
   }
 );
+
+FuturesAccountSchema.virtual("marginAvailable").get(function () {
+  return Math.max(this.balance - this.marginUsed, 0);
+});
+
+FuturesAccountSchema.set("toJSON", { virtuals: true });
+FuturesAccountSchema.set("toObject", { virtuals: true });
 
 export default mongoose.models.FuturesAccount ||
   mongoose.model("FuturesAccount", FuturesAccountSchema);

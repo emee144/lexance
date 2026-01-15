@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     const positions = await FuturesPosition.find({
-      user: user.id,
+      user: user._id,
       status: "open",
     })
       .sort({ openedAt: -1 })

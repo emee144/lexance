@@ -32,7 +32,7 @@ export async function connectDB() {
   try {
     cached.conn = await cached.promise;
   } catch (e) {
-    cached.promise = null; // Reset on failure so it retries next time
+    cached.promise = null; 
     console.error("MongoDB connection error:", e);
     throw e;
   }

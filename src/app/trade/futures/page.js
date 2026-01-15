@@ -23,9 +23,10 @@ export default function FuturesPage() {
   const [activeBottomTab, setActiveBottomTab] = useState('positions');
   const [positions, setPositions] = useState([]);
   const [loadingPositions, setLoadingPositions] = useState(true);
+  const [tradeHistory, setTradeHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [account, setAccount] = useState({
     balance: 0,
-    availableMargin: 0,
     marginUsed: 0,
     equity: 0,
   });
@@ -75,7 +76,7 @@ export default function FuturesPage() {
     };
 
     fetchMarketData();
-    const interval = setInterval(fetchMarketData, 60000);
+    const interval = setInterval(fetchMarketData, 120000);
 
     const updateCountdown = () => {
       const now = new Date();
@@ -88,8 +89,8 @@ export default function FuturesPage() {
 
       const diff = next - now;
       const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
+      const m = Math.floor((diff % 3600000) / 120000);
+      const s = Math.floor((diff % 120000) / 1000);
       setNextFunding(`${h}h ${m}m ${s}s`);
     };
 
@@ -109,12 +110,7 @@ export default function FuturesPage() {
         const res = await fetch('/api/auth/futures/account');
         if (res.ok) {
           const data = await res.json();
-          setAccount(data.account || {
-            balance: 0,
-            availableMargin: 0,
-            marginUsed: 0,
-            equity: 0,
-          });
+          setAccount(data.account || { balance: 0, marginUsed: 0, equity: 0 });
         }
       } catch (err) {
         console.error('Failed to load account', err);
@@ -135,9 +131,10 @@ export default function FuturesPage() {
       setLoadingPositions(true);
       try {
         const res = await fetch('/api/auth/futures/positions');
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
-        setPositions(data.positions || []);
+        if (res.ok) {
+          const data = await res.json();
+          setPositions(data.positions || []);
+        }
       } catch (err) {
         console.error('Failed to load positions', err);
       } finally {
@@ -146,7 +143,30 @@ export default function FuturesPage() {
     };
 
     fetchPositions();
-    const interval = setInterval(fetchPositions, 8000);
+    const interval = setInterval(fetchPositions, 30000);
+    return () => clearInterval(interval);
+  }, [activeBottomTab]);
+
+  useEffect(() => {
+    if (activeBottomTab !== 'history') return;
+
+    const fetchHistory = async () => {
+      setLoadingHistory(true);
+      try {
+        const res = await fetch('/api/auth/futures/positions/history');
+        if (res.ok) {
+          const data = await res.json();
+          setTradeHistory(data.history || []);
+        }
+      } catch (err) {
+        console.error('Failed to load history', err);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+
+    fetchHistory();
+    const interval = setInterval(fetchHistory, 30000);
     return () => clearInterval(interval);
   }, [activeBottomTab]);
 
@@ -196,6 +216,135 @@ export default function FuturesPage() {
     }
   };
 
+  const handleClosePosition = async (positionId) => {
+    if (!currentPrice) {
+      setMessage('Waiting for price...');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/futures/positions/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          positionId,
+          exitPrice: Number(currentPrice.toFixed(2)),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage(`Closed! PnL: $${data.realizedPnl || '0.00'}`);
+      } else {
+        setMessage(data.error || 'Failed to close');
+      }
+
+      setTimeout(() => setMessage(''), 5000);
+    } catch (err) {
+      setMessage('Network error');
+      setTimeout(() => setMessage(''), 5000);
+    }
+  };
+
+  const renderTabContent = () => {
+    if (activeBottomTab === 'positions') {
+      return loadingPositions ? (
+        <p className="text-center text-gray-500 py-12">Loading positions...</p>
+      ) : positions.length === 0 ? (
+        <p className="text-center text-gray-500 py-12">No open positions</p>
+      ) : (
+        <div className="space-y-3">
+          {positions.map((pos) => {
+            const unrealizedPnl = pos.side === 'long'
+              ? (currentPrice - pos.entryPrice) * pos.quantity
+              : (pos.entryPrice - currentPrice) * pos.quantity;
+            const roi = pos.margin > 0 ? (unrealizedPnl / pos.margin) * 100 : 0;
+
+            return (
+              <div key={pos._id} className="bg-gray-900 rounded p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className={pos.side === 'long' ? 'text-green-400' : 'text-red-400'}>
+                      {pos.pair || 'BTCUSDT'} {pos.side.toUpperCase()} ×{pos.leverage}
+                    </span>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {pos.quantity} contracts @ ${pos.entryPrice.toFixed(2)}
+                    </div>
+                    <div className="text-xs mt-2">
+                      Unrealized PnL:{' '}
+                      <span className={unrealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}>
+                        ${unrealizedPnl.toFixed(2)} ({roi.toFixed(2)}%)
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleClosePosition(pos._id)}
+                    className="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded font-medium transition"
+                  >
+                    CLOSE POSITION
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (activeBottomTab === 'orders') {
+      return (
+        <p className="text-center text-gray-500 py-12">
+          Limit orders not supported yet
+        </p>
+      );
+    }
+
+    if (activeBottomTab === 'history') {
+      return loadingHistory ? (
+        <p className="text-center text-gray-500 py-12">Loading history...</p>
+      ) : tradeHistory.length === 0 ? (
+        <p className="text-center text-gray-500 py-12">No closed trades yet</p>
+      ) : (
+        <div className="space-y-3">
+          {tradeHistory.map((item) => {
+            const pnlColor = item.realizedPnl >= 0 ? 'text-green-400' : 'text-red-400';
+            const roi = item.margin > 0 ? (item.realizedPnl / item.margin) * 100 : 0;
+
+            return (
+              <div key={item._id} className="bg-gray-900 rounded p-4 text-sm">
+                <div className="flex justify-between">
+                  <span>
+                    {item.pair} {item.side.toUpperCase()} ×{item.leverage}
+                  </span>
+                  <span>
+  {item.quantity} @ ${item.exitPrice ? item.exitPrice.toFixed(2) : '-'}
+</span>
+
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+  Entry ${item.entryPrice ? item.entryPrice.toFixed(2) : '-'} → Exit ${item.exitPrice ? item.exitPrice.toFixed(2) : '-'}
+</div>
+
+                <div className="mt-2">
+                  <span className={pnlColor}>
+                    PnL: ${item.realizedPnl.toFixed(2)} ({roi.toFixed(2)}%)
+                  </span>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {new Date(item.closedAt).toLocaleString()}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
@@ -218,7 +367,7 @@ export default function FuturesPage() {
             </div>
             <div>
               <span className="text-gray-500">Avail Margin</span><br />
-              <span className="text-green-400">${loadingAccount ? 'Loading...' : account.availableMargin.toFixed(2)}</span>
+              <span className="text-green-400">${loadingAccount ? 'Loading...' : (account.balance - account.marginUsed).toFixed(2)}</span>
             </div>
             <div>
               <span className="text-gray-500">Used Margin</span><br />
@@ -323,8 +472,10 @@ export default function FuturesPage() {
           </button>
 
           {message && (
-            <div className="mt-6 p-4 bg-gray-900 rounded text-center text-green-400">
-              {message}
+            <div className="mt-6 p-4 bg-gray-900 rounded text-center">
+              <span className={message.includes('Closed') || message.includes('opened') ? 'text-green-400' : 'text-red-400'}>
+                {message}
+              </span>
             </div>
           )}
         </div>
@@ -348,38 +499,13 @@ export default function FuturesPage() {
             onClick={() => setActiveBottomTab('history')}
             className={`flex-1 py-4 text-center font-medium ${activeBottomTab === 'history' ? 'border-b-4 border-blue-500' : ''}`}
           >
-            Order History
+            Trade History
           </button>
         </div>
 
-        {activeBottomTab === 'positions' && (
-          <div className="p-4 max-h-64 overflow-y-auto text-sm">
-            {loadingPositions ? (
-              <p className="text-center text-gray-500 py-12">Loading positions...</p>
-            ) : positions.length === 0 ? (
-              <p className="text-center text-gray-500 py-12">No open positions</p>
-            ) : (
-              <div className="space-y-3">
-                {positions.map((pos) => (
-                  <div key={pos._id} className="bg-gray-900 rounded p-4">
-                    <div className="flex justify-between">
-                      <span className={pos.side === 'long' ? 'text-green-400' : 'text-red-400'}>
-                        {pos.pair || 'BTCUSDT'} {pos.side.toUpperCase()} ×{pos.leverage}
-                      </span>
-                      <span>{pos.quantity} contracts</span>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-2">
-                      Entry: ${pos.entryPrice?.toFixed(2)} | Unrealized PnL:{' '}
-                      <span className={pos.unrealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}>
-                        ${pos.unrealizedPnl?.toFixed(2)} ({pos.roiPercentage?.toFixed(2)}%)
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        <div className="p-4 max-h-64 overflow-y-auto text-sm">
+          {renderTabContent()}
+        </div>
       </div>
     </div>
   );

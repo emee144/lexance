@@ -12,7 +12,7 @@ async function getUserFromCookie(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded?.id) return null;
 
-    return await User.findById(decoded.id).lean();
+    return await User.findById(decoded.id);
   } catch {
     return null;
   }
@@ -30,20 +30,20 @@ export async function POST(req) {
     const { from, to, coin, amount } = await req.json();
     const amt = Number(amount);
 
-    if (!from || !to || !coin || !amount) {
-      return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
+    if (!from || !to || !coin || !Number.isFinite(amt) || amt <= 0) {
+      return new Response(JSON.stringify({ error: "Invalid request" }), { status: 400 });
     }
 
-    if (!["assets", "funding", "futures"].includes(from) || !["assets", "funding", "futures"].includes(to)) {
-      return new Response(JSON.stringify({ error: "Invalid from/to type" }), { status: 400 });
+    const TYPES = ["assets", "funding", "futures"];
+    if (!TYPES.includes(from) || !TYPES.includes(to) || from === to) {
+      return new Response(JSON.stringify({ error: "Invalid transfer type" }), { status: 400 });
     }
 
-    if (from === to) {
-      return new Response(JSON.stringify({ error: "Cannot transfer to same account" }), { status: 400 });
-    }
-
-    if (!Number.isFinite(amt) || amt <= 0) {
-      return new Response(JSON.stringify({ error: "Invalid amount" }), { status: 400 });
+    if ((from === "futures" || to === "futures") && coin !== "USDT") {
+      return new Response(
+        JSON.stringify({ error: "Futures transfers only support USDT" }),
+        { status: 400 }
+      );
     }
 
     const wallet = await Wallet.findOne({ user: user._id });
@@ -57,60 +57,66 @@ export async function POST(req) {
         user: user._id,
         balance: 0,
         marginUsed: 0,
-        availableMargin: 0,
         equity: 0,
       });
     }
 
-    if (from === "futures" || to === "futures") {
-      if (coin !== "USDT") {
-        return new Response(JSON.stringify({ error: "Futures account only supports USDT" }), { status: 400 });
-      }
-    }
-
-    if (from === "assets" || to === "assets") {
-      const assetsBalance = wallet.assets.get(coin) || 0;
-      if (from === "assets" && assetsBalance < amt) {
+    if (from === "assets") {
+      if ((wallet.assets.get(coin) || 0) < amt) {
         return new Response(JSON.stringify({ error: "Insufficient assets balance" }), { status: 400 });
       }
     }
 
-    if (from === "funding" || to === "funding") {
-      const fundingBalance = wallet.funding.get(coin) || 0;
-      if (from === "funding" && fundingBalance < amt) {
+    if (from === "funding") {
+      if ((wallet.funding.get(coin) || 0) < amt) {
         return new Response(JSON.stringify({ error: "Insufficient funding balance" }), { status: 400 });
       }
     }
 
-    if (from === "futures" && futuresAccount.balance < amt) {
-      return new Response(JSON.stringify({ error: "Insufficient futures balance" }), { status: 400 });
+    if (from === "futures") {
+      if (futuresAccount.balance - futuresAccount.marginUsed < amt) {
+        return new Response(
+          JSON.stringify({ error: "Insufficient available futures margin" }),
+          { status: 400 }
+        );
+      }
     }
 
     if (from === "assets" && to === "funding") {
       wallet.assets.set(coin, (wallet.assets.get(coin) || 0) - amt);
       wallet.funding.set(coin, (wallet.funding.get(coin) || 0) + amt);
-    } else if (from === "funding" && to === "assets") {
+    }
+
+    else if (from === "funding" && to === "assets") {
       wallet.funding.set(coin, (wallet.funding.get(coin) || 0) - amt);
-      wallet.assets.set(coin, (wallet.assets.get(coin) || 0) + amt);
-    } else if (from === "funding" && to === "futures") {
-      wallet.funding.set("USDT", (wallet.funding.get("USDT") || 0) - amt);
-      futuresAccount.balance += amt;
-      futuresAccount.equity += amt;
-    } else if (from === "futures" && to === "funding") {
-      futuresAccount.balance -= amt;
-      futuresAccount.equity -= amt;
-      wallet.funding.set("USDT", (wallet.funding.get("USDT") || 0) + amt);
-    } else if (from === "assets" && to === "futures") {
-      wallet.assets.set(coin, (wallet.assets.get(coin) || 0) - amt);
-      futuresAccount.balance += amt;
-      futuresAccount.equity += amt;
-    } else if (from === "futures" && to === "assets") {
-      futuresAccount.balance -= amt;
-      futuresAccount.equity -= amt;
       wallet.assets.set(coin, (wallet.assets.get(coin) || 0) + amt);
     }
 
-    futuresAccount.availableMargin = futuresAccount.balance - futuresAccount.marginUsed;
+    else if (from === "assets" && to === "futures") {
+      wallet.assets.set(coin, (wallet.assets.get(coin) || 0) - amt);
+      futuresAccount.balance += amt;
+      futuresAccount.equity += amt;
+    }
+
+    else if (from === "funding" && to === "futures") {
+      wallet.funding.set("USDT", (wallet.funding.get("USDT") || 0) - amt);
+      futuresAccount.balance += amt;
+      futuresAccount.equity += amt;
+    }
+
+    else if (from === "futures" && to === "assets") {
+      futuresAccount.balance -= amt;
+      futuresAccount.equity -= amt;
+      wallet.assets.set("USDT", (wallet.assets.get("USDT") || 0) + amt);
+    }
+
+    else if (from === "futures" && to === "funding") {
+      futuresAccount.balance -= amt;
+      futuresAccount.equity -= amt;
+      wallet.funding.set("USDT", (wallet.funding.get("USDT") || 0) + amt);
+    }
+
+    futuresAccount.lastUpdatedAt = new Date();
 
     await wallet.save();
     await futuresAccount.save();
@@ -122,15 +128,15 @@ export async function POST(req) {
         funding: Object.fromEntries(wallet.funding),
         futures: {
           balance: futuresAccount.balance,
-          availableMargin: futuresAccount.availableMargin,
           marginUsed: futuresAccount.marginUsed,
+          marginAvailable: futuresAccount.marginAvailable,
           equity: futuresAccount.equity,
         },
       }),
       { status: 200 }
     );
   } catch (err) {
-    console.error("Transfer API error:", err);
+    console.error("Transfer error:", err);
     return new Response(JSON.stringify({ error: "Server error" }), { status: 500 });
   }
 }

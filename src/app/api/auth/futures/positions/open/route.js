@@ -13,78 +13,89 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-
     const {
       pair = "BTCUSDT",
       side,
       quantity,
       entryPrice,
       leverage = 20,
-    } = body;
+    } = await req.json();
 
-    if (!side || !["long", "short"].includes(side)) {
-      return NextResponse.json({ error: "Invalid side: must be 'long' or 'short'" }, { status: 400 });
+    if (!["long", "short"].includes(side)) {
+      return NextResponse.json({ error: "Invalid side" }, { status: 400 });
     }
 
-    if (!quantity || quantity <= 0) {
-      return NextResponse.json({ error: "Quantity must be a positive number" }, { status: 400 });
-    }
-
-    if (!entryPrice || entryPrice <= 0) {
-      return NextResponse.json({ error: "Entry price must be a positive number" }, { status: 400 });
+    if (!quantity || quantity <= 0 || !entryPrice || entryPrice <= 0) {
+      return NextResponse.json({ error: "Invalid quantity or price" }, { status: 400 });
     }
 
     if (leverage < 1 || leverage > 125) {
-      return NextResponse.json({ error: "Leverage must be between 1 and 125" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid leverage" }, { status: 400 });
     }
 
-    const margin = (quantity * entryPrice) / leverage;
+    const marginRequired = (quantity * entryPrice) / leverage;
 
-    const account = await FuturesAccount.findOne({ user: user.id });
+    let account = await FuturesAccount.findOne({ user: user._id });
 
     if (!account) {
-      return NextResponse.json({ error: "No futures account found" }, { status: 400 });
+      return NextResponse.json({ error: "No futures account. Transfer funds first." }, { status: 400 });
     }
 
-    if (account.availableMargin < margin) {
-      return NextResponse.json({ error: "Insufficient available margin" }, { status: 400 });
+    const availableMargin = account.balance - account.marginUsed;
+
+    if (availableMargin < marginRequired) {
+      return NextResponse.json(
+        { error: `Insufficient margin. Required: ${marginRequired.toFixed(2)}, Available: ${availableMargin.toFixed(2)}` },
+        { status: 400 }
+      );
     }
 
     const updatedAccount = await FuturesAccount.findOneAndUpdate(
-      { _id: account._id, availableMargin: { $gte: margin } },
       {
-        $inc: {
-          marginUsed: margin,
-          availableMargin: -margin,
-        },
+        _id: account._id,
+        balance: account.balance,
+        marginUsed: account.marginUsed,
+      },
+      {
+        $inc: { marginUsed: marginRequired },
       },
       { new: true }
     );
 
     if (!updatedAccount) {
-      return NextResponse.json({ error: "Insufficient margin - please try again" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Margin changed. Please try again." },
+        { status: 409 }
+      );
     }
 
     const position = await FuturesPosition.create({
-      user: user.id,
-      account: account._id,
+      user: user._id,
       pair,
       side,
       leverage,
       entryPrice,
       quantity,
-      margin,
+      margin: marginRequired,
       status: "open",
       openedAt: new Date(),
     });
 
     return NextResponse.json(
-      { message: "Position opened successfully", position },
+      {
+        message: "Position opened successfully",
+        position,
+        account: {
+          balance: updatedAccount.balance,
+          marginUsed: updatedAccount.marginUsed,
+          availableMargin: updatedAccount.balance - updatedAccount.marginUsed,
+          equity: updatedAccount.equity || updatedAccount.balance,
+        },
+      },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Error opening position:", error);
+  } catch (err) {
+    console.error("Open position error:", err);
     return NextResponse.json(
       { error: "Failed to open position" },
       { status: 500 }
